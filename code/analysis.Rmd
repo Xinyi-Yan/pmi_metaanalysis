@@ -53,9 +53,8 @@ theme_plots <- function() {
 
 ## Make conceptual figures
 
-```{r make-base-coex-plot, eval = T}
+```{r make-base-coex-plot, eval = T, warning = FALSE}
 ## Make a base plot that can be modified for each sub question  
-
 base_coex_plot <- 
   ggplot() +
   geom_ribbon(aes(x = seq(0, 5, length.out = 100),
@@ -88,10 +87,14 @@ base_coex_plot <-
 
 ### Figure 1
 *For Figure 1, we assume negative values for all $m$ terms*
-```{r conceptual-fig1, eval = T, cache = T, warning = FALSE, fig.height = 4, fig.width = 8}
+```{r conceptual-fig1, eval = T, cache = T, warning = F, message = F, fig.height = 4, fig.width = 8}
 psf_model <- function(time, init, params) {
   with (as.list(c(time, init, params)), {
-    # description of parameters
+    # description of parameters (see Bever et al. 1997)
+    # pA: frequency of plant species 1; pB = 1-pA
+    # m1A, m1B, m2A, m2B: conspecific and heterospecific effects of microbial community A or B on the growth of plant 1 or 2
+    # pAlpha: frequency of the soil microbial community A
+    # v: influence of plant species 2 on the microbial community relative to that of plant 1
     
     # Differential equations
     dpA <- pA*(1-pA)*((m1A-m1B)*pAlpha + (m2A-m2B)*(1-pAlpha))
@@ -214,7 +217,6 @@ make_params_plot <- function(params) {
 }
 
 
-
 plot_traj1 <- make_sim_plot(out_coex)  +
   scale_y_continuous(breaks = c(0, 0.5, 1), limits = c(0,1))
 plot_traj2 <- make_sim_plot(out_excl) 
@@ -326,7 +328,7 @@ if(save_figures) {
 ### Figure S.1
 
 Make the conceptual figure, but this time, show all four outcomes using positive values of all $m$ terms. 
-```{r conceptual-fig1-mutualisms, eval = T, cache = T, warning = F, fig.height = 4, fig.width = 8}
+```{r conceptual-fig1-mutualisms, eval = T, cache = T, warning = FALSE, fig.height = 4, fig.width = 8}
 params_coex = c(m1A = .2*2, m1B = 0.3*2, m2A = .4*2, m2B = .13*2, v = 1)
 params_excl = c(m1A = .3*2, m1B = .2*2, m2A = 0.5*2, m2B = .15*2, v = 1)
 params_priority = c(m1A = .9, m1B = 0.4, m2A = 0.38, m2B = 0.5, v = 1)
@@ -457,19 +459,17 @@ calculate_effect_sizes <- function(data){
       mean_SD = -1/2*(log(`AinA mean`) - log(`AinB mean`) - 
                         log(`BinA mean`) + log(`BinB mean`) ),
       IS = -2*mean_SD,
-      # variance of SD effect size
+      # variance of the SD effect size
       # it is a quarter of the var(rrIs) in Crawford et al. 2019
       # note that `AinA var`/`AinA N = `AinA se`^2
       var_SD = 1/4*`AinA se`^2/`AinA mean`^2 + 
         1/4*`AinB se`^2/`AinB mean`^2 +
         1/4*`BinA se`^2/`BinA mean`^2 +
         1/4*`BinB se`^2/`BinB mean`^2,
-      # note that the above is the variance of the mean estimate, 
+      # note that the above is the variance of the mean estimate,
       # i.e. the square of the "Standard Error of the Mean" for SD effect size
       sem_SD = sqrt(var_SD),
 
-      n_min_SD = as.integer(pmin(`AinA N`, `AinB N`, `BinA N`, `BinB N`)),
-      
       # next, fitness difference (FD) effect size
       mean_FD = 1/2*(log(`AinA mean`) + log(`AinB mean`) - 
                        2*log(`AinR mean`) - log(`BinA mean`) - log(`BinB mean`) 
@@ -484,7 +484,6 @@ calculate_effect_sizes <- function(data){
         `BinR se`^2/`BinR mean`^2,
       # "Standard Error of the Mean" for FD effect size
       sem_FD = sqrt(var_FD),
-      n_min_FD = as.integer(pmin(n_min_SD, `AinR N`, `BinR N`)),
       
       # absolute value of FD
       abs_FD = abs(mean_FD),
@@ -577,13 +576,11 @@ For this analysis, we are working with two complementary datasets. The first is 
 
 ```{r import-data, eval = T, include = F}
 # Start with the field live ref
-live_ref <- read_csv("../data/data_live_ref.csv")
-# if directly run the code in console (instead of knitting RMD), use:
-# live_ref <- read_csv("data/data_live_ref.csv")
-# similar for reading other data 
+live_ref <- read_csv("data/data_live_ref.csv")
+# if knitting fails, please change the knit directory to "Project directory"
 
 # Import the Sterile Soil ref
-sterile_ref <- read_csv("../data/data_sterile_ref.csv")
+sterile_ref <- read_csv("data/data_sterile_ref.csv")
 
 frac_inoc_hist <- 
   ggplot(bind_rows(sterile_ref, live_ref)) +
@@ -785,8 +782,8 @@ Now that the data look in good shape, we are ready to quantify the effect sizes 
 # existing one.
 live_ref <- calculate_effect_sizes(live_ref)
 # The new columns are: 
-# mean_SD, IS, var_SD, sem_SD, n_min_SD; mean_FD, var_FD, sem_FD,
-# n_min_FD; abs_FD, mean_IGR, var_IGR, sem_IGR
+# mean_SD, IS, var_SD, sem_SD; mean_FD, var_FD, sem_FD,
+# abs_FD, mean_IGR, var_IGR, sem_IGR
 
 sterile_ref <- calculate_effect_sizes(sterile_ref)
 ```
@@ -804,8 +801,6 @@ live_ref_long <-
          mean_SD, mean_FD, var_SD, var_FD, 
          `Fraction inoculum`, `Training environment`, `Testing environment`,
          Study_sterilization_method, `Testing community`) %>%
-  # rename(FD_mean = mean_FD, #absFD_mean = abs(FD_mean),
-  #        FD_var = var_FD, SD_mean = mean_SD, SD_var = var_SD) %>%
   pivot_longer(cols = mean_SD:var_FD, 
                names_to = c(".value","set"),
                names_pattern = "(.+)_(.+)")  %>%
@@ -835,8 +830,6 @@ sterile_ref_long <-
          mean_SD, mean_FD, var_SD, var_FD, 
          `Fraction inoculum`, `Training environment`, `Testing environment`, control_type,
          Study_sterilization_method, `Testing community`) %>%
-  # rename(FD_mean = mean_FD, #absFD_mean = abs(FD_mean),
-  #        FD_var = var_FD, SD_mean = mean_SD, SD_var = var_SD) %>%
   pivot_longer(cols = mean_SD:var_FD, 
                names_to = c(".value","set"),
                names_pattern = "(.+)_(.+)")  %>%
@@ -1280,21 +1273,20 @@ sterile_ref_long <-
          set_sterileMethod = paste0(set, "_", Study_sterilization_method),
          set_communityType = paste0(set, "_", `Testing community`))
 
-# Check which comparisons are possible to make in this dataset:
-# table(sterile_ref$`Training environment`) # 177 pairs in field, 235 in lab, 34 in LabField
-# table(sterile_ref$`Testing environment`) # 2 pairs in the field, 444 in lab
-# table(sterile_ref_long$inoc_frac_binary)/2 # 117 pairs with low, 329 pairs with high
-# table(sterile_ref$control_type)
 ```
 
 **Inoculation fraction: High/Low**
 
 ```{r Q1-moderators-sterile-inoc, eval = T, cache = T}
-# Warning: this chunk of code can take ~10 min to run
-q1.xs.inocFrac <- run_metamod(which_df = sterile_ref_long, 
-                              which_response_column = "absolute_FDSD_effects",
-                              moderators = " ~ (set_inoc_frac-1)",
-                              impute_cov_r = 0.5)
+# directly sourcing previously-saved outcome to save time
+# running the model code may take ~10 min
+# q1.xs.inocFrac <- run_metamod(which_df = sterile_ref_long, 
+#                               which_response_column = "absolute_FDSD_effects",
+#                               moderators = " ~ (set_inoc_frac-1)",
+#                               impute_cov_r = 0.5)
+# saveRDS(q1.xs.inocFrac, "code/saved_results/q1.xs.inocFrac")
+q1.xs.inocFrac <- readRDS("code/saved_results/q1.xs.inocFrac")
+
 # coef_test(q1.xs.inocFrac, vcov = "CR2") # check if different from zero
 conf_int(q1.xs.inocFrac, vcov = "CR2") %>% # take look at the confidence interval
   kable() %>%
@@ -1312,12 +1304,15 @@ Wald_test(q1.xs.inocFrac, constraints = constrain_equal(c(2,4)), vcov = "CR2") #
 **Conditioning phase environment: Greenhouse/Field**
 
 ```{r Q1-moderators-sterile-condphase, eval = T, cache = T}
-# Warning: this chunk of code can take ~10 min to run
 # Training environment -------
-q1.xs.trainEnv <- run_metamod(which_df = sterile_ref_long, 
-                              which_response_column = "absolute_FDSD_effects",
-                              moderators = " ~ (set_trainingEnv-1)",
-                              impute_cov_r = 0.5)
+# directly sourcing previously-saved outcome to save time
+# running the model code may take ~10 min
+# q1.xs.trainEnv <- run_metamod(which_df = sterile_ref_long, 
+#                               which_response_column = "absolute_FDSD_effects",
+#                               moderators = " ~ (set_trainingEnv-1)",
+#                               impute_cov_r = 0.5)
+# saveRDS(q1.xs.trainEnv, "code/saved_results/q1.xs.trainEnv")
+q1.xs.trainEnv <- readRDS("code/saved_results/q1.xs.trainEnv")
 
 # coef_test(q1.xs.trainEnv, vcov = "CR2") # check if different from zero
 conf_int(q1.xs.trainEnv, vcov = "CR2") %>% # take look at the confidence interval
@@ -1338,12 +1333,15 @@ Wald_test(q1.xs.trainEnv, constraints = constrain_equal(2:4), vcov = "CR2") # La
 
 
 ```{r Q1-moderators-sterile-soiltype, eval = T, cache = T}
-# Warning: this chunk of code can take ~5 min to run
 # Control type ---------
-q1.xs.controlType <- run_metamod(which_df = sterile_ref_long, 
-                                 which_response_column = "absolute_FDSD_effects",
-                                 moderators = " ~ (set_controlType-1)",
-                                 impute_cov_r = 0.5)
+# directly sourcing previously-saved outcome to save time
+# running the model code may take ~5 min
+# q1.xs.controlType <- run_metamod(which_df = sterile_ref_long, 
+#                                  which_response_column = "absolute_FDSD_effects",
+#                                  moderators = " ~ (set_controlType-1)",
+#                                  impute_cov_r = 0.5)
+# saveRDS(q1.xs.controlType, "code/saved_results/q1.xs.controlType")
+q1.xs.controlType <- readRDS("code/saved_results/q1.xs.controlType")
 
 # coef_test(q1.xs.controlType, vcov = "CR2") # check if different from zero
 conf_int(q1.xs.controlType, vcov = "CR2") %>% # take look at the confidence interval
@@ -1365,12 +1363,16 @@ Wald_test(q1.xs.controlType, constraints = constrain_equal(c(4,8)), vcov = "CR2"
 
 
 ```{r Q1-moderators-sterile-steriletype, eval = T, cache = T}
-# Warning: this chunk of code can take ~5 min to run
 # Sterilization method ---------
-q1.xs.sterileMethod <- run_metamod(which_df = sterile_ref_long, 
-                              which_response_column = "absolute_FDSD_effects",
-                              moderators = " ~ (set_sterileMethod-1)",
-                              impute_cov_r = 0.5)
+# directly sourcing previously-saved outcome to save time
+# running the model code may take ~5 min
+# q1.xs.sterileMethod <- run_metamod(which_df = sterile_ref_long, 
+#                               which_response_column = "absolute_FDSD_effects",
+#                               moderators = " ~ (set_sterileMethod-1)",
+#                               impute_cov_r = 0.5)
+# saveRDS(q1.xs.sterileMethod, "code/saved_results/q1.xs.sterileMethod")
+q1.xs.sterileMethod <- readRDS("code/saved_results/q1.xs.sterileMethod")
+
 # coef_test(q1.xs.sterileMethod, vcov = "CR2") # check if different from zero
 conf_int(q1.xs.sterileMethod, vcov = "CR2") %>% # take look at the confidence interval
   kable() %>%
@@ -1390,12 +1392,16 @@ Wald_test(q1.xs.sterileMethod, constraints = constrain_equal(c(4,8)), vcov = "CR
 
 
 ```{r Q1-moderators-sterile-growthtype, eval = T, cache = T}
-# Warning: this chunk of code can take ~5 min to run
 # Community type ---------
-q1.xs.communityType <- run_metamod(which_df = sterile_ref_long, 
-                                   which_response_column = "absolute_FDSD_effects",
-                                   moderators = " ~ (set_communityType-1)",
-                                   impute_cov_r = 0.5)
+# directly sourcing previously-saved outcome to save time
+# running the model code may take ~5 min
+# q1.xs.communityType <- run_metamod(which_df = sterile_ref_long, 
+#                                    which_response_column = "absolute_FDSD_effects",
+#                                    moderators = " ~ (set_communityType-1)",
+#                                    impute_cov_r = 0.5)
+# saveRDS(q1.xs.communityType, "code/saved_results/q1.xs.communityType")
+q1.xs.communityType <- readRDS("code/saved_results/q1.xs.communityType")
+
 # coef_test(q1.xs.communityType, vcov = "CR2") # check if different from zero
 conf_int(q1.xs.communityType, vcov = "CR2") %>% # take look at the confidence interval
   kable() %>%
@@ -1624,7 +1630,6 @@ Figure S.4
 Here we run models as in the main text, but we impute covariance matrices with assumed within-experiment (de)stabilization-fitness difference correlations of -0.5, 0.1, or 0.9. (The main text models are run with assumed correlations of 0.5.). Expand code below to see details. 
 
 ```{r supp-q1-varying-imputed-r, eval = T, cache = T}
-# Warning: this chunk of code can take ~15 min to run
 q1.lr.0.1 <- run_metamod(which_df = live_ref_long, 
                          which_response_column = "absolute_FDSD_effects",
                          moderators = " ~ (set-1)",
@@ -1639,18 +1644,28 @@ q1.lr.neg.0.5 <- run_metamod(which_df = live_ref_long,
                          impute_cov_r = -0.5)
 
 
-q1.xs.0.1 <- run_metamod(which_df = sterile_ref_long, 
-                         which_response_column = "absolute_FDSD_effects", 
-                         moderators = " ~ (set-1)",
-                         impute_cov_r = 0.1)
-q1.xs.0.9 <- run_metamod(which_df = sterile_ref_long, 
-                         which_response_column = "absolute_FDSD_effects", 
-                         moderators = " ~ (set-1)",
-                         impute_cov_r = 0.9)
-q1.xs.neg.0.5 <- run_metamod(which_df = sterile_ref_long, 
-                         which_response_column = "absolute_FDSD_effects", 
-                         moderators = " ~ (set-1)",
-                         impute_cov_r = -0.5)
+# directly sourcing previously-saved outcome to save time
+# running the model code may take >5 min
+# q1.xs.0.1 <- run_metamod(which_df = sterile_ref_long, 
+#                          which_response_column = "absolute_FDSD_effects", 
+#                          moderators = " ~ (set-1)",
+#                          impute_cov_r = 0.1)
+# saveRDS(q1.xs.0.1, "code/saved_results/q1.xs.0.1")
+q1.xs.0.1 <- readRDS("code/saved_results/q1.xs.0.1")
+
+# q1.xs.0.9 <- run_metamod(which_df = sterile_ref_long, 
+#                          which_response_column = "absolute_FDSD_effects", 
+#                          moderators = " ~ (set-1)",
+#                          impute_cov_r = 0.9)
+# saveRDS(q1.xs.0.9, "code/saved_results/q1.xs.0.9")
+q1.xs.0.9 <- readRDS("code/saved_results/q1.xs.0.9")
+
+# q1.xs.neg.0.5 <- run_metamod(which_df = sterile_ref_long, 
+#                          which_response_column = "absolute_FDSD_effects", 
+#                          moderators = " ~ (set-1)",
+#                          impute_cov_r = -0.5)
+# saveRDS(q1.xs.neg.0.5, "code/saved_results/q1.xs.neg.0.5")
+q1.xs.neg.0.5 <- readRDS("code/saved_results/q1.xs.neg.0.5")
 
 varying_imputed_r <- 
   bind_rows(data.frame(conf_int(q1.xs.neg.0.5, vcov = "CR2")),
@@ -1746,8 +1761,8 @@ q1.lr.trim.wald <- Wald_test(q1.lr.0.5.no143.138, constraints = constrain_equal(
 # find "influential points"
 # the code below was run and saved, here just being sourced to save time
 # cd.points.q1.lr.0.5 <- cooks.distance.rma.mv(q1.lr.0.5, parallel = "multicore")
-# write.csv(cd.points.q1.lr.0.5, "../data/influence_test_results/cd.points.q1.lr.0.5.csv")
-cd.points.q1.lr.0.5 <- read.csv("../data/influence_test_results/cd.points.q1.lr.0.5.csv", row.names = 1)
+# write.csv(cd.points.q1.lr.0.5, "code/saved_results/cd.points.q1.lr.0.5.csv")
+cd.points.q1.lr.0.5 <- read.csv("code/saved_results/cd.points.q1.lr.0.5.csv", row.names = 1)
 # which(cd.points.q1.lr.0.5 > 0.45) # no "influential points"
 ```
 
@@ -1758,13 +1773,13 @@ In the influence analysis for sterile soil references we found one study that wa
 ```{r sterile-ref-influence, eval = T}
 # find "influential experiments"
 # the code code was run and saved, here just being sourced to save time
+# directly running the code may take hours
 # cd.exp.q1.xs.0.5<-cooks.distance.rma.mv(q1.xs.0.5, 
 #                       cluster = sterile_ref_long$Experiment, 
 #                       reestimate = F,
 #                       parallel = "multicore")
-# write.csv(cd.exp.q1.xs.0.5, "../data/influence_test_results/cd.exp.q1.xs.0.5.csv")
-# otherwise the above chunk can take hours to run
-cd.exp.q1.xs.0.5 <- read.csv("../data/influence_test_results/cd.exp.q1.xs.0.5.csv")
+# write.csv(cd.exp.q1.xs.0.5, "code/saved_results/cd.exp.q1.xs.0.5.csv")
+cd.exp.q1.xs.0.5 <- read.csv("code/saved_results/cd.exp.q1.xs.0.5.csv")
 colnames(cd.exp.q1.xs.0.5) <- c("expt", "cooks_dist")
 
 # cd.exp.q1.xs.0.5[cd.exp.q1.xs.0.5$cooks_dist>0.45, ] # influential experiment = 33; Hendricks et al.
@@ -1794,9 +1809,9 @@ q1.xs.trim.wald <- Wald_test(q1.xs.0.5.no33, constraints = constrain_equal(1:2),
 # find "influential points"
 # cd.points.q1.xs.0.5<-cooks.distance.rma.mv(q1.xs.0.5, parallel = "multicore",
 #                                            reestimate = F)
-# write.csv(cd.points.q1.xs.0.5, "../data/influence_test_results/cd.points.q1.xs.0.5.csv")
+# write.csv(cd.points.q1.xs.0.5, "code/saved_results/cd.points.q1.xs.0.5.csv")
 # directly source outcomes to avoid excessive run time (can take hours)
-cd.points.q1.xs.0.5 <- read.csv("../data/influence_test_results/cd.points.q1.xs.0.5.csv")
+cd.points.q1.xs.0.5 <- read.csv("code/saved_results/cd.points.q1.xs.0.5.csv")
 colnames(cd.points.q1.xs.0.5) <- c("expt", "cooks_dist")
 # cd.points.q1.xs.0.5[cd.points.q1.xs.0.5$cooks_dist>0.45, ] # no influential points
 ```
@@ -1859,7 +1874,10 @@ q1_deletion_plot <- ggplot(q1.deletion.plot, aes(y = beta, x = yval)) +
   labs(title = "Influence analysis")
 
 q1_deletion_plot
-# ggsave("figures/q1_deletion_plot.png", q1_deletion_plot, bg = "transparent", height = 5, width = 8)
+
+if(save_figures){
+  ggsave("figures/q1_deletion_plot.png", q1_deletion_plot, bg = "transparent", height = 5, width = 8)
+}
 ```
 Figure. S.6
 
@@ -2162,7 +2180,42 @@ if(save_figures) {
 Figure S.7
 
 
-### Fig.4: Sampling approach 
+### Pairwise direct comparison (of ND and FD)
+
+We first evaluate the pairwise competitive outcome by directly comparing the mean niche and fitness differences within species pairs.
+
+#### Live soil
+```{r pairwise-comparison-live, eval = T}
+# how many pairs are coexistence by MEAN FD and SD
+# sum(live_ref$mean_SD>0 & live_ref$mean_IGR >0)
+# what's the frequency of coexistence among all three possible outcomes?
+paste0("coexistence: ", percent(sum(live_ref$mean_SD>0 & live_ref$mean_IGR >0)/nrow(live_ref)))
+
+# sum(live_ref$mean_SD<0 & abs(live_ref$mean_SD)>live_ref$abs_FD)
+# how frequently are priority effects?
+paste0("priority effects: ", percent(sum(live_ref$mean_SD<0 & abs(live_ref$mean_SD)>live_ref$abs_FD)/nrow(live_ref)))
+
+# sum(abs(live_ref$mean_SD)<live_ref$abs_FD)
+# how frequently are competitive exclusions?
+paste0("exclusions: ", percent(sum(abs(live_ref$mean_SD)<live_ref$abs_FD)/nrow(live_ref)))
+```
+
+#### Sterile soil
+```{r pairwise-comparison-sterile, eval = T}
+# sum(sterile_ref$mean_SD>0 & sterile_ref$mean_IGR >0)
+# how frequently are coexistence?
+paste0("coexistence: ", percent(sum(sterile_ref$mean_SD>0 & sterile_ref$mean_IGR >0)/nrow(sterile_ref)))
+
+# sum(sterile_ref$mean_SD<0 & abs(sterile_ref$mean_SD)>sterile_ref$abs_FD)
+# how frequently are priority effects?
+paste0("priority effects: ", percent(sum(sterile_ref$mean_SD<0 & abs(sterile_ref$mean_SD)>sterile_ref$abs_FD)/nrow(sterile_ref)))
+
+# sum(abs(sterile_ref$mean_SD)<sterile_ref$abs_FD)
+# how frequently are competitive exclusions?
+paste0("competitive exclusion: ", percent(sum(abs(sterile_ref$mean_SD)<sterile_ref$abs_FD)/nrow(sterile_ref)))
+```
+
+### Fig.4: Pairwise sampling approach 
 
 To do this sampling, we use the custom function `simulation_ci`, which we have defined in the earlier section "Define functions & prepare data". 
 
@@ -2397,7 +2450,7 @@ XS_simulation_out_SterileSoilCmS <- simulation_ci(data_with_SDFD = sterile_ref %
 
 #### **Table S.1: table of outcomes for live soil reference**
 
-```{r make-simulation-table-live, eval = T}
+```{r make-simulation-table-live, eval = T, warning=FALSE}
 options(kableExtra.latex.load_packages = FALSE)
 table_of_things <-
   rbind(c("Overall",(t(unlist(percent_outcomes(live_ref_sims_by_run))))),
@@ -2557,7 +2610,7 @@ Table S.2
 
 ## Additional supplemental analyses
 ### Fig.S.8: analysis to justify Q2 pairwise approaches
-```{r q2-reason, eval = TRUE, cache = T}
+```{r q2-reason, eval = TRUE, cache = T, warning=FALSE}
 set.seed(680)
 
 # sample a dataframe with negatively correlated SD & FD
@@ -2759,14 +2812,14 @@ fx_plot
 
 ```
 
-```{r catterpillar-plots-2, eval = T, fig.height = 20}
+```{r catterpillar-plots-2, eval = T, message=FALSE, warning=FALSE, fig.height = 20}
 # For sterile reference soil ----------
 XS_ref_plot <- 
   sterile_ref %>%
   # remove unneeded columns
   filter(mean_SD > -4) %>%
   select(Experiment, Study, author, #Species_pair = `Species pair`,
-         mean_FD, sem_FD, mean_SD, sem_SD, control_type,study_control_type) %>%
+         mean_FD, sem_FD, mean_SD, sem_SD, control_type, study_control_type) %>%
   group_by(Study, author) %>%
   # make new column for absolute value of FD and SD
   mutate(n = n(), abs_mean_FD = abs(mean_FD), abs_mean_SD = abs(mean_SD)) %>%
@@ -2829,9 +2882,9 @@ if(save_figures) {
 
 Finally we want to just double check that our data extraction protocol to get the estimates of plant growth in reference soils gives the same results as Crawford et al's extractions (when we apply our protocol to non-reference growth).
 
-```{r compare-data-extractions, eval = T, message=FALSE}
+```{r compare-data-extractions, eval = T, message=FALSE, warning=FALSE}
 
-comparison_df <- read_csv("../data/crawford-yan-extractions.csv")
+comparison_df <- read_csv("data/crawford-yan-extractions.csv")
 comparison_df_filt <- comparison_df %>%
   filter(!is.na(AinA_mean_reestimate))
 
