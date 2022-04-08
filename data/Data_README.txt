@@ -62,7 +62,3 @@ Variable descriptions:
 
 This file contains original data extracted by Crawford et al. (2019), with part of them re-extracted by Yan et al. using WebPlotDigitizer to confirm the consistency of data extraction. Columns with the "_reestimate" suffix contain the re-extracted data. All other columns have the original data compiled by Crawford et al. Column variable descriptions are the same as those for 'data_live_ref.csv' and 'data_sterile_ref.csv'.  
 
-
-
-
-crawford_yan_extractions.csv
