@@ -53,6 +53,8 @@ theme_plots <- function() {
 
 ## Make conceptual figures
 
+The first goal is to make a base plot of stabilization/fitness differences onto which we can add species pairs. We will use this base plot to make the middle panel of Figure 1, and also to make Figure 4 in the paper. 
+
 ```{r make-base-coex-plot, eval = T, warning = FALSE}
 ## Make a base plot that can be modified for each sub question  
 base_coex_plot <- 
@@ -85,9 +87,15 @@ base_coex_plot <-
 #base_coex_plot
 ```
 
+
 ### Figure 1
-*For Figure 1, we assume negative values for all $m$ terms*
+
+In Figure 1, we illustrate the possible outcomes of the plant-soil feedback model (coexistence/priority effects/exclusion). We use the base plot made above as the middle panel, and then add trajectories/graphics around the outside to illustrate potential outcomes. 
+
+Figure 1 focuses on dynamics when microbes tend to hurt plant growth (negative values for all $m$ terms). Figure S1 illustrates how all outcomes are possible even when microbes benefit plant growth (positive values for all $m$ terms).
+
 ```{r conceptual-fig1, eval = T, cache = T, warning = F, message = F, fig.height = 4, fig.width = 8}
+# Write a function that we can later use to simulate model dynamics using deSolve
 psf_model <- function(time, init, params) {
   with (as.list(c(time, init, params)), {
     # description of parameters (see Bever et al. 1997)
@@ -105,6 +113,7 @@ psf_model <- function(time, init, params) {
   })
 }
 
+# Function to calculate relevant metrics given a vector of m terms
 metrics <- function(params) {
   IS <- with(as.list(params), {m1A - m2A - m1B + m2B})
   FD <- with(as.list(params), {(1/2)*(m1A+m2A) - (1/2)*(m1B+m2B)})
@@ -112,26 +121,37 @@ metrics <- function(params) {
   return(c(IS = IS, SD = SD, FD = FD))
 }
 
+# Define parameter values that result in different coexistence outcomes
 params_coex = c(m1A = -.85, m1B = -.4, m2A = -.1, m2B = -.75, v = 1)
 params_excl = c(m1A = -.55, m1B = -.7, m2A = -.1, m2B = -.85, v = 1)
 params_priority = c(m1A = -0.2, m1B = -0.5, m2A = -0.8, m2B = -0.15, v = 1)
 params_excl2 = c(m1A = -.1, m1B = -0.9, m2A = -.2, m2B = -.55, v = 1)
+
+# define a time series and initial values of plant frequency.
+# We will later use these to simulate the psf_model defined above. 
 time <- seq(0, 20, 0.1)
 init = c(pA = 0.3, pAlpha = 0.3)
 
+# run psf_model() using deSolve::ode()
+# we run several different scenarios using the parameter vectors defined above.
 out_coex <- data.frame(deSolve::ode(func = psf_model,
                                     y = init, times = time, parms = params_coex)) 
 out_excl <- data.frame(deSolve::ode(func = psf_model,
                                     y = init, times = time, parms = params_excl)) 
+
+# For priority effects and exclusion with destabilization, we need to run two 
+# simulations with different initial conditions. 
 out_priority <- data.frame(deSolve::ode(func = psf_model,
                                         y = init, times = time, parms = params_priority)) 
 
 out_priority2 <- data.frame(deSolve::ode(func = psf_model,
-                                         y = c(pA = 0.7, pAlpha = 0.7), times = time, parms = params_priority)) 
+                                         y = c(pA = 0.7, pAlpha = 0.7), 
+                                         times = time, parms = params_priority)) 
 out_excl2 <- data.frame(deSolve::ode(func = psf_model,
                                      y = init, times = time, parms = params_excl2)) 
 out_excl2b <- data.frame(deSolve::ode(func = psf_model,
-                                      y = c(pA = 0.7, pAlpha = 0.7), times = time, parms = params_excl2)) 
+                                      y = c(pA = 0.7, pAlpha = 0.7), 
+                                      times = time, parms = params_excl2)) 
 
 
 # Plotting --------
@@ -450,6 +470,9 @@ if(save_figures) {
 
 Please click on "code" to the right to see the functions we have written to help run the analyses. 
 ```{r define-functions, eval = T}
+# Define a new function that takes as its input the data file
+# and uses the columns `AinA mean`, `AinA se`, .... to calculate the 
+# stabilization and fitness difference metrics (as well as the variance)
 calculate_effect_sizes <- function(data){
   # data: each row is a species pair, with growth data (mean, se, n) 
   #       of each species in conspecific, heterospecific, and control soil
@@ -460,7 +483,7 @@ calculate_effect_sizes <- function(data){
                         log(`BinA mean`) + log(`BinB mean`) ),
       IS = -2*mean_SD,
       # variance of the SD effect size
-      # it is a quarter of the var(rrIs) in Crawford et al. 2019
+      # note that this is 1/4 of the var(rrIs) in Crawford et al. 2019
       # note that `AinA var`/`AinA N = `AinA se`^2
       var_SD = 1/4*`AinA se`^2/`AinA mean`^2 + 
         1/4*`AinB se`^2/`AinB mean`^2 +
@@ -472,8 +495,8 @@ calculate_effect_sizes <- function(data){
 
       # next, fitness difference (FD) effect size
       mean_FD = 1/2*(log(`AinA mean`) + log(`AinB mean`) - 
-                       2*log(`AinR mean`) - log(`BinA mean`) - log(`BinB mean`) 
-                     + 2*log(`BinR mean`) ),
+                       2*log(`AinR mean`) - log(`BinA mean`) - 
+                       log(`BinB mean`) + 2*log(`BinR mean`) ),
       # calculate the variance & SEM of the FD effect size
       # Derivations (2 ways) are shown in variance_logRR file
       var_FD = 1/4*`AinA se`^2/`AinA mean`^2 + 
@@ -505,8 +528,11 @@ simulation_ci <- function(data_with_SDFD) {
   to_return <- data_with_SDFD
   
   
-  # draw from biomasses directly, to account for correlation
-  # code from Gaurav
+  # First we need to define new columns that quantify the SD of
+  # the relevant biomass values. Here, the standard error of the mean from the
+  # original study is divided by the mean value to back-calculate 
+  # the standard deviations of the log(biomass) values.
+  # See Appendix 2 for derivations/justifications. 
   data_with_SDFD$sd_logAinA = data_with_SDFD$`AinA se`/data_with_SDFD$`AinA mean`
   data_with_SDFD$sd_logAinB = data_with_SDFD$`AinB se`/data_with_SDFD$`AinB mean`
   data_with_SDFD$sd_logAinR = data_with_SDFD$`AinR se`/data_with_SDFD$`AinR mean`
@@ -514,6 +540,9 @@ simulation_ci <- function(data_with_SDFD) {
   data_with_SDFD$sd_logBinB = data_with_SDFD$`BinB se`/data_with_SDFD$`BinB mean`
   data_with_SDFD$sd_logBinR = data_with_SDFD$`BinR se`/data_with_SDFD$`BinR mean`
   
+  # BEGIN SAMPLING APPROACH
+  # First we use the biomass values (mean and SD) to generate new vectors
+  # of possible values
   biomass_AinA_list <- lapply(1:nrow(data_with_SDFD), function(x)
     rnorm(n_reps, mean = log(data_with_SDFD$`AinA mean`[x]), 
           sd = data_with_SDFD$sd_logAinA[x]))
@@ -532,17 +561,25 @@ simulation_ci <- function(data_with_SDFD) {
   biomass_BinR_list <- lapply(1:nrow(data_with_SDFD), function(x)
     rnorm(n_reps, mean = log(data_with_SDFD$`BinR mean`[x]), 
           sd = data_with_SDFD$sd_logBinR[x]))
+  
+  # Use the new vectors created above to go from biomass values to 
+  # estimates of m terms: 
+  # (m1A = biomass(plant 1, soil A) - biomass(plant 1, reference soil))
   mAA_vec <- mapply("-", biomass_AinA_list, biomass_AinR_list, SIMPLIFY = F)
   mAB_vec <- mapply("-", biomass_AinB_list, biomass_AinR_list, SIMPLIFY = F)
   mBA_vec <- mapply("-", biomass_BinA_list, biomass_BinR_list, SIMPLIFY = F)
   mBB_vec <- mapply("-", biomass_BinB_list, biomass_BinR_list, SIMPLIFY = F)
   
+  # Define functions that use m terms to calculate 
+  # stabilization and fitness difference
   SD_calc <- function(mAA, mAB, mBA, mBB) {
     -0.5*(mAA - mAB - mBA + mBB)
   }
   FD_calc <- function(mAA, mAB, mBA, mBB) {
     0.5*(mAA + mAB) - 0.5*(mBA + mBB)
   }
+  
+  # Use newly defined functions to calculate SD and FD
   SD_vec_matrix <- mapply(SD_calc, mAA_vec, mAB_vec, mBA_vec, mBB_vec, SIMPLIFY = T)
   FD_vec_matrix <- mapply(FD_calc, mAA_vec, mAB_vec, mBA_vec, mBB_vec, SIMPLIFY = T)
   
