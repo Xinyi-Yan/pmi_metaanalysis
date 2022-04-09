@@ -51,12 +51,16 @@ theme_plots <- function() {
 
 # `R` code to recreate all results 
 
+This file contains code for reproducing results from Yan et al. 'A quantitative synthesis of soil microbial effects on plant species coexistence'.
+
+The html document mostly shows the output rather than the underlying code. Click on the 'Code' button to the right to expand or hide the code.
+
 ## Make conceptual figures
 
 The first goal is to make a base plot of stabilization/fitness differences onto which we can add species pairs. We will use this base plot to make the middle panel of Figure 1, and also to make Figure 4 in the paper. 
 
 ```{r make-base-coex-plot, eval = T, warning = FALSE}
-## Make a base plot that can be modified for each sub question  
+# Make a base plot that can be modified for each sub question  
 base_coex_plot <- 
   ggplot() +
   geom_ribbon(aes(x = seq(0, 5, length.out = 100),
@@ -84,7 +88,7 @@ base_coex_plot <-
   theme_plots() + 
   theme(axis.line = element_blank())
 
-#base_coex_plot
+# base_coex_plot
 ```
 
 
@@ -347,8 +351,9 @@ if(save_figures) {
 
 ### Figure S.1
 
-Make the conceptual figure, but this time, show all four outcomes using positive values of all $m$ terms. 
-```{r conceptual-fig1-mutualisms, eval = T, cache = T, warning = FALSE, fig.height = 4, fig.width = 8}
+We make another conceptual figure, but this time, show all four outcomes using positive values of all $m$ terms. 
+```{r conceptual-fig1-mutualisms, eval = T, cache = T, warning = F, message = F, fig.height = 4, fig.width = 8}
+# defining parameters (positive m terms) for different competitive outcomes
 params_coex = c(m1A = .2*2, m1B = 0.3*2, m2A = .4*2, m2B = .13*2, v = 1)
 params_excl = c(m1A = .3*2, m1B = .2*2, m2A = 0.5*2, m2B = .15*2, v = 1)
 params_priority = c(m1A = .9, m1B = 0.4, m2A = 0.38, m2B = 0.5, v = 1)
@@ -356,6 +361,7 @@ params_excl2 = c(m1A = .8, m1B = 0.1, m2A = 0.5, m2B = .15, v = 1)
 time <- seq(0, 30,.1)
 init = c(pA = 0.3, pAlpha = 0.3)
 
+# run the previously defined psf_model() function with deSolve::ode()
 out_coex <- data.frame(deSolve::ode(func = psf_model,
                                     y = init, times = time, parms = params_coex)) 
 out_excl <- data.frame(deSolve::ode(func = psf_model,
@@ -467,7 +473,6 @@ if(save_figures) {
 ## Define functions & prepare data
 
 ### Define useful functions to run the analyses downstream.
-
 Please click on "code" to the right to see the functions we have written to help run the analyses. 
 ```{r define-functions, eval = T}
 # Define a new function that takes as its input the data file
@@ -619,6 +624,7 @@ live_ref <- read_csv("data/data_live_ref.csv")
 # Import the Sterile Soil ref
 sterile_ref <- read_csv("data/data_sterile_ref.csv")
 
+# examine histogram of studies using different fraction of inoculum
 frac_inoc_hist <- 
   ggplot(bind_rows(sterile_ref, live_ref)) +
   geom_histogram(aes(x = `Fraction inoculum`), size = 2) + 
@@ -647,6 +653,7 @@ bind_rows(sterile_ref, live_ref) %>%
 
 
 ```{r data-overview-1, eval = T}
+# examine how many species pairs are there in live vs. sterile reference dataset
 bind_rows(sterile_ref, live_ref, .id = "reference_type") %>%
   mutate(reference_type = ifelse(reference_type == 1, "sterile soil", "live soil")) %>%
   group_by(reference_type) %>%
@@ -698,17 +705,20 @@ cat(paste0("&emsp; Number of unique experiments in Sterile ref dataset: ",
 We can also do some summaries of the 4-5 moderators we are going to use later on in the analysis. First for the **Live reference** dataset: 
 
 ```{r show-moderators-live, eval = T}
+# how many pairwise comparisons are there that used Lab vs. Field training environment?
 live_ref %>%
   group_by(`Training environment`) %>%
   summarize(n_rows = n()) %>%
   kable() %>% kable_styling(full_width = F)
   
+# how many pairwise comparisons are there that used Low vs. High fraction inoculum?
 live_ref %>%
-  mutate(inoc_frac_binary = ifelse(`Fraction inoculum` < 0.251, "low", "high")) %>%
+  mutate(inoc_frac_binary = ifelse(`Fraction inoculum` <= 0.25, "low", "high")) %>%
   group_by(inoc_frac_binary) %>%
   summarize(n_rows = n()) %>%
   kable() %>% kable_styling(full_width = F)
 
+# how many pairwise comparisons are there that grew phase-2 species in individual, population, or community?
 live_ref %>%
   group_by(`Testing community`) %>%
   summarize(n_rows = n()) %>%
@@ -719,22 +729,26 @@ live_ref %>%
 And next for the **Sterile reference** dataset:
 
 ```{r show-moderators-sterile, eval = T, results = 'asis'}
+# # of pairwise comparisons using Lab vs. Field training environment?
 sterile_ref %>%
   group_by(`Training environment`) %>%
   summarize(n_rows = n()) %>%
   kable() %>% kable_styling(full_width = F)
   
+# # of pairwise comparisons using Low vs. High fraction inoculum?
 sterile_ref %>%
-  mutate(inoc_frac_binary = ifelse(`Fraction inoculum` < 0.251, "low", "high")) %>%
+  mutate(inoc_frac_binary = ifelse(`Fraction inoculum` <= 0.25, "low", "high")) %>%
   group_by(inoc_frac_binary) %>%
   summarize(n_rows = n()) %>%
   kable() %>% kable_styling(full_width = F)
 
+# # of pairwise comparisons grew in individual, population, vs. community?
 sterile_ref %>%
   group_by(`Testing community`) %>%
   summarize(n_rows = n()) %>%
   kable() %>% kable_styling(full_width = F)
 
+# # of pairwise comparisons using different types soil as sterile reference?
 cat("Note that in the following table, CmS = cultivated, mixed, sterile; CS = cultivated sterile, FS = field sterile soil, GS = greenhouse sterile soil")
 
 sterile_ref %>%
@@ -742,7 +756,7 @@ sterile_ref %>%
   summarize(n_rows = n()) %>%
   kable() %>% kable_styling(full_width = F)
 
-
+# # of pairwise comparisons using different types of sterilization methods?
 sterile_ref %>%
   group_by(Study_sterilization_method) %>%
   summarize(n_rows = n()) %>%
@@ -753,6 +767,7 @@ sterile_ref %>%
 Before starting on the meta-analysis models, we should do some more data exploration. First let us evaluate patterns of conspecific and heterospecific effects of soil microbes (boxplots of the conspecific effects of microbes ($m_{1A}$ and $m_{2B}$) vs heterospecific effects ($m_{1B}$ and $m_{2A}$)): 
 
 ```{r consp-v-heterosp-effect, eval = T}
+# magnitude of con- vs. hetero-specific effects in the live reference dataset
 live_ref %>%
   mutate(m1A = log(`AinA mean`) - log(`AinR mean`),
          m1B = log(`AinB mean`) - log(`AinR mean`),
@@ -768,6 +783,7 @@ live_ref %>%
 # Slightly more positive (less negative) heterospecific effects than
 # conspecific effects, consistent with stabilization
 
+# magnitude of con- vs. hetero-specific effects in the sterile reference dataset
 sterile_ref %>%
   mutate(m1A = log(`AinA mean`) - log(`AinR mean`),
          m1B = log(`AinB mean`) - log(`AinR mean`),
@@ -784,6 +800,7 @@ sterile_ref %>%
 
 There is one species pair with an extreme outlier in the heterospecific effects column. We need to look into what is happening here. This is the pair from McCarthy-Neumann and Kobe (2010)'s study, where the paper has no value for plant growth, which was interpreted as zero growth in Crawford et al's dataset. 
 ```{r arrange_sterile_m2As, eval = T}
+# order m2A values in the dataset, the outlier shows up on top
 sterile_ref %>%
   mutate(m1A = log(`AinA mean`) - log(`AinR mean`),
          m1B = log(`AinB mean`) - log(`AinR mean`),
@@ -800,6 +817,7 @@ That does appear to be the case, the pair with the really low value is `colubrin
 There is also one species pair (`rumex_occidentalis_rumex_salicifolius`) for which there is always zero growth in reference soil, this is not usable because the value for SE is zero, making it impossible to use in the meta-analysis. We can remove those points here. 
 
 ```{r filter-sterile-sppairs, eval = T}
+# manually removing the two identified outliers
 sterile_ref <- 
   sterile_ref %>% 
   filter(!(species_pair %in% c("colubrina_spinosa_iriartea_deltoidea",
@@ -811,7 +829,7 @@ Removing those unusable data points leaves us with **446** pairwise comparisons 
 
 ## Question 1
 
-Now that the data look in good shape, we are ready to quantify the effect sizes ((de)stabilization and fitness differences). To do so we use functions defined in the earlier section "Define functions & prepare data". 
+Now that the data look in good shape, we are ready to quantify the effect sizes (magnitude of (de)stabilization and fitness differences). To do so we use functions defined in the earlier section "Define functions & prepare data". 
 
 ```{r calculate-effectsizes, eval = T, class.source = 'fold-show'}
 # Use the above-deined functions to calculate niche and fitness difference
@@ -822,6 +840,7 @@ live_ref <- calculate_effect_sizes(live_ref)
 # mean_SD, IS, var_SD, sem_SD; mean_FD, var_FD, sem_FD,
 # abs_FD, mean_IGR, var_IGR, sem_IGR
 
+# repeat for sterile dataset
 sterile_ref <- calculate_effect_sizes(sterile_ref)
 ```
 
@@ -891,6 +910,9 @@ For the first question, we need to run a multi-variate meta-analysis model. To d
 #### Define a function to run the meta-model
 
 ```{r define-run-metamod, eval = T, class.source = 'fold-show'}
+# function that automatically impute a variance-covariance matrix, and 
+# run a multivariate random/mixed effect model (can add fixed effect argument)
+# using rma.mv() function in metafor
 run_metamod <- function(which_df, which_response_column, 
                         moderators = " ~ (set-1)", impute_cov_r) {
   
@@ -905,7 +927,9 @@ run_metamod <- function(which_df, which_response_column,
   # Run the model
   rma_formula <- formula(paste(which_response_column, moderators))
   model_out <- rma.mv(rma_formula,
+                      # the above-imputed var-covar matrix
                       V = imputed_Vlist,
+                      # using species pair and experiment as random effects
                       random = list(~ set|Experiment_SpPair, # This is same as ES_ID
                                     ~ set|Experiment
                                     ), 
@@ -919,16 +943,20 @@ run_metamod <- function(which_df, which_response_column,
 
 ### Run meta-analysis for the Live Reference dataset
 
-With the function defined, we can now run the meta-analysis model on the live reference dataset. 
+With the function defined, we can now run the meta-analysis model on the live reference dataset. Note that the response variables are the *absolute* values of stabilization and fitness difference, since we focus on their magnitudes for Q1.
 
 ```{r run-LR-metamodel, cache = T, eval = T, class.source = 'fold-show'}
 # Run the meta-analysis model on the full live reference dataset ----
 q1.lr.0.5 <- run_metamod(which_df = live_ref_long, 
+                         # absolute values as effect sizes
                          which_response_column = "absolute_FDSD_effects",
+                         # set (SD/FD) as a fixed effect, for multivariate model
+                         # note that random effects are already defined
                          moderators = " ~ (set-1)",
                          impute_cov_r = 0.5)
 
-coef_test(q1.lr.0.5, vcov = "CR2") %>% # check if different from zero
+# check if effect sizes are different from zero
+coef_test(q1.lr.0.5, vcov = "CR2") %>% 
   kable () %>%
   kable_styling(full_width = F)
 
@@ -937,6 +965,8 @@ conf_int(q1.lr.0.5, vcov = "CR2") %>% # take look at the confidence interval
   kable_styling(full_width = F)
 
 q1.lr.0.5_coefs <- data.frame(conf_int(q1.lr.0.5, vcov =  "CR2"))
+
+# Using wald test to test if SD is different from FD
 # See https://cran.r-project.org/web/packages/clubSandwich/vignettes/Wald-tests-in-clubSandwich.html
 # for explainer of Wald_test()
 # (basically, check if values are different from one another)
@@ -956,7 +986,7 @@ q1.lr.wald <- Wald_test(q1.lr.0.5, constraints = constrain_equal(1:2), vcov = "C
 ```
 Figure. S.2 (A)
 
-Now we can quantify the heterogeneity. 
+Now we can quantify the heterogeneity of the effect sizes. 
 
 ```{r quantify-LR-heterogeneity, eval = T, class.source = 'fold-show'}
 # To quantify heterogeneity
@@ -972,6 +1002,7 @@ V_mat_lr <- impute_covariance_matrix(
   r = 0.5, return_list = F)
 V_mat_lr <- bldiag(V_mat_lr)
 
+# the rma.mv() model without random effects
 q1.lr.0.5.noRanefs <- rma.mv(absolute_FDSD_effects ~ (set - 1), V = V_mat_lr, data = live_ref_long)
 
 I2R_LiveRef <- 
@@ -983,7 +1014,7 @@ I2R_LiveRef # First for FD, then stabilization
 
 
 ### Run meta-analysis for the Sterile Reference dataset
-
+Now we repeat for the sterile reference dataset. Again, note that the response variables are the *absolute* values of stabilization and fitness difference.
 ```{r run-XS-metamodel, cache = T, eval = T, class.source = 'fold-show'}
 # Run the meta-analysis model on the full sterile reference dataset ----
 q1.xs.0.5 <- run_metamod(which_df = sterile_ref_long, 
@@ -991,12 +1022,15 @@ q1.xs.0.5 <- run_metamod(which_df = sterile_ref_long,
                          moderators = " ~ (set-1)",
                          impute_cov_r = 0.5)
 
-q1.xs.coef <- coef_test(q1.xs.0.5, vcov = "CR2") # check if different from zero
+# check if effect sizes are different from zero
+q1.xs.coef <- coef_test(q1.xs.0.5, vcov = "CR2") 
 q1.xs.0.5_coefs <- data.frame(conf_int(q1.xs.0.5, vcov =  "CR2"))
-# conf_int(q1.xs.0.5, vcov = "CR2") # check if different from zero
-q1.xs.wald <- Wald_test(q1.xs.0.5, constraints = constrain_equal(1:2), vcov = "CR2") # check if values are different from one another
+# conf_int(q1.xs.0.5, vcov = "CR2") # check if different from zero using CI
+# using wald test to check if effect sizes are different from one another
+q1.xs.wald <- Wald_test(q1.xs.0.5, constraints = constrain_equal(1:2), vcov = "CR2") 
 cov2cor(q1.xs.0.5$vb)
 
+# uncomment to run the code; slow to run:
 # pdf("figures/q1-xs-profile.pdf", height = 8, width = 8)
 # par(mfrow = c(2,2))
 # profile(q1.xs.0.5)
@@ -1005,7 +1039,7 @@ cov2cor(q1.xs.0.5$vb)
 ```
 Figure. S.2 (B)
 
-Now, quantify heterogeneity
+Now, quantify heterogeneity of the effect sizes
 ```{r quantify-XS-heterogeneity, eval = T, class.source = 'fold-show'}
 # Quantify heterogeneity 
 V_mat_xs <- impute_covariance_matrix(
@@ -1015,8 +1049,10 @@ V_mat_xs <- impute_covariance_matrix(
   r = 0.5, return_list = F)
 V_mat_xs <- bldiag(V_mat_xs)
 
+# an rma.mv() model without random effects
 q1.xs.0.5.noRanefs <- rma.mv(absolute_FDSD_effects ~ (set - 1), V = V_mat_xs, data = sterile_ref_long)
 
+# calculate I^2_R, following Jackson et al. 2012.
 I2R_SterileRef <- 
   c(100 * (vcov(q1.xs.0.5)[1,1] - vcov(q1.xs.0.5.noRanefs)[1,1]) / vcov(q1.xs.0.5)[1,1],
     100 * (vcov(q1.xs.0.5)[2,2] - vcov(q1.xs.0.5.noRanefs)[2,2]) / vcov(q1.xs.0.5)[2,2])
@@ -1025,22 +1061,29 @@ I2R_SterileRef
 
 
 ### Fig.3: plot of the effect sizes
+Now, we make a figure that visualize the effect sizes (magnitude of SD, FD), their CIs, and their heterogeneities for both datasets.
 
 ```{r make-figure-3, eval = T}
+# combine coefficients for models built with live and sterile reference datasets
 q1_dfs <- bind_rows(q1.xs.0.5_coefs,
                     q1.lr.0.5_coefs)
 
+# make dataframes to arrange the effectsizes and prediction intervals
 q1_dfs <- q1_dfs %>%
   mutate(yval = c(1.2, 0.8, 2.2, 1.8),
          which_source = rep(c("XS", "LR"), each = 2),
          effect_type = rep(c("Fitness difference", 
                              "(De)stabilization"), 2),
          I2R = c(I2R_SterileRef, I2R_LiveRef))
+
+# calculating prediction intervals, currently not in fig.3 
+# (but contains commented code below to include it in the figure)
 prediction_intervals <- bind_rows(data.frame(predict.rma(q1.xs.0.5)[1:2,]),
                                   data.frame(predict.rma(q1.lr.0.5)[1:2,])) %>%
   mutate(which_source = rep(c("XS", "LR"), each = 2),
          effect_type = c("(De)stabilization", "Fitness difference", "(De)stabilization", "Fitness difference"))
 
+# combine coefficient dataframe with prediction interval dataframe
 q1_dfs <- left_join(x = q1_dfs, y = prediction_intervals, 
                     by = c("effect_type", "which_source"))
 
@@ -1073,7 +1116,6 @@ live_ref_long <-
   # geom_errorbar(aes(x = yval, ymin = pi.lb, ymax = pi.ub), width = 0, size = 0.15) +
   geom_vline(xintercept = 1.5, size = .25) + 
   geom_hline(yintercept = 0, linetype = 2, size = .5, color = "grey25") +
-  
   annotate("text", y = 4.5, x = 2, label = paste0("K = ", nrow(live_ref_long)/2, 
                                                   " species pairs\n (",length(unique(live_ref_long$Experiment))," experiments)"),
            hjust = 1, size = 4) + 
@@ -1127,7 +1169,7 @@ Figure 3
 
 ### Figure S.3: Moderator analyses
 
-Now, explore how experimental moderators affect the outcomes
+Now, explore how experimental moderators affect the outcomes using mixed effect models.
 
 
 #### Live ref soils Moderator analysis 
@@ -1158,8 +1200,10 @@ live_ref_long <-
 # nrow(unique(live_ref_long[which(live_ref_long$`Testing community` == "Community"),"Experiment"]))
 # nrow(unique(live_ref_long[which(live_ref_long$`Testing community` == "Individual"),"Experiment"]))
 
+# mixed effect model using rma.mv() (wrapper function here is defined above)
 q1.lr.inocFrac <- run_metamod(which_df = live_ref_long, 
                               which_response_column = "absolute_FDSD_effects",
+                              # set(SD/FD) and inoc_frac as fixed effects
                               moderators = " ~ (set_inoc_frac-1)",
                               impute_cov_r = 0.5)
 # coef_test(q1.lr.inocFrac, vcov = "CR2") %>% # check if different from zero
@@ -1226,6 +1270,7 @@ Wald_test(q1.lr.testComm, constraints = constrain_equal(c(3,6)), vcov = "CR2") #
 ***Now, put it all together to make the plot. ***
 
 ```{r make-Q1-moderators-live-plot, eval = T, fig.height = 8, fig.width = 6}
+# combine coefficients from models built with the above moderators respectively
 q1.lr.coefs.plot <- bind_rows(conf_int(q1.lr.0.5, vcov = "CR2"),
                               conf_int(q1.lr.trainEnv, vcov = "CR2"),
                               conf_int(q1.lr.inocFrac, vcov =  "CR2"),
@@ -1243,12 +1288,12 @@ q1.lr.coefs.plot <-
          set = ifelse(set == "FD", "Fitness difference", "(De)stabilization"))
 
 
-
+# making a moderator plot
 q1.mods.lr.plot <-
   ggplot(q1.lr.coefs.plot, aes(y = beta, x = yval)) +
   geom_ribbon(aes(x = seq(0.75, 2.25, length.out = 16), ymin = -Inf, ymax = Inf), fill = "grey90") + 
   geom_ribbon(aes(x = seq(3.25, 4.25, length.out = 16), ymin = -Inf, ymax = Inf), fill = "grey90") + 
-
+  
   geom_point(size = 4, aes(fill = set), shape = 21) +
   geom_errorbar(aes(ymin = CI_L, ymax = CI_U), width = 0, size = .4) +
   geom_vline(xintercept = c(2.25, 3.25, 4.25), size = 0.25) + 
@@ -1294,11 +1339,12 @@ q1.mods.lr.plot
 #### Sterile soil moderator analysis
 
 ```{r Q1-moderators-sterile-df, eval = T, cache = T}
-# Inoculation fraction, low/high
+# first cleanup data by binning data for frac_inoc categories (low:<=0.25)
+# and binning minority sterilization methods into "other" category
 sterile_ref_long <-
   sterile_ref_long %>%
   mutate(`Training environment` = ifelse(`Training environment` == "LabField", "Lab", `Training environment`)) %>%
-  mutate(inoc_frac_binary = ifelse(`Fraction inoculum` < 0.2501, "low", "high"),
+  mutate(inoc_frac_binary = ifelse(`Fraction inoculum` <= 0.25, "low", "high"),
          set_inoc_frac = paste0(set, "_", inoc_frac_binary),
          set_trainingEnv = paste0(set, "_", `Training environment`),
          set_testingEnv = paste0(set, "_", `Testing environment`),
@@ -1453,7 +1499,7 @@ Wald_test(q1.xs.communityType, constraints = constrain_equal(c(1,4)), vcov = "CR
 Wald_test(q1.xs.communityType, constraints = constrain_equal(c(2,5)), vcov = "CR2")
 Wald_test(q1.xs.communityType, constraints = constrain_equal(c(3,6)), vcov = "CR2")
 
-
+# this is the wald test for SD vs. FD in the entire sterile reference dataset:
 Wald_test(q1.xs.0.5, constraints = constrain_equal(c(1,2)), vcov = "CR2") 
 ```
 
@@ -1575,6 +1621,7 @@ q1.mods.xs.plot
 *For the supplement of the main paper, we put these plots together into one multipanel figure (Figure S.3; expand following code block for details).*
 
 ```{r combine-moderator-plots, eval = T, cache = T, fig.height = 9, fig.width = 8}
+# combine plots of the two datasets side by side
 q1_mods_plot <- 
   q1.mods.lr.plot + q1.mods.xs.plot + 
   plot_layout(guides = "collect") &
@@ -1588,17 +1635,20 @@ if(save_figures) {
 ```
 
 ### Fig. S.4: Univariate version of the Q1 models
+To test robustness of our results, we alternatively run univariate models of just SD or FD, and compare their magnitudes.
 
 ```{r supp-q1-univariate, eval = T}
+# live reference dataset
 q1.lr.univariate.fd <- rma.mv(yi = absolute_FDSD_effects, V = var_value, 
                               random = ~ 1|Experiment, 
+                              # only feed in data of the relevant effect size
                               data = live_ref_long %>% filter(set == "FD"))
 
 q1.lr.univariate.sd <- rma.mv(yi = absolute_FDSD_effects, V = var_value, 
                               random = ~ 1|Experiment, 
                               data = live_ref_long %>% filter(set == "SD"))
 
-
+# sterile reference dataset
 q1.xs.univariate.fd <- rma.mv(yi = absolute_FDSD_effects, V = var_value, 
                               random = ~ 1|Experiment, 
                               data = sterile_ref_long %>% filter(set == "FD"))
@@ -1607,6 +1657,7 @@ q1.xs.univariate.sd <- rma.mv(yi = absolute_FDSD_effects, V = var_value,
                               data = sterile_ref_long %>% filter(set == "SD"))
 
 
+# combine model coefficients for visual comparison 
 q1_multi_v_uni <-
   bind_rows(
   data.frame(conf_int(q1.xs.0.5, "CR2")),
@@ -1667,6 +1718,9 @@ Figure S.4
 Here we run models as in the main text, but we impute covariance matrices with assumed within-experiment (de)stabilization-fitness difference correlations of -0.5, 0.1, or 0.9. (The main text models are run with assumed correlations of 0.5.). Expand code below to see details. 
 
 ```{r supp-q1-varying-imputed-r, eval = T, cache = T}
+# the three models below uses var-covar matrix imputed with r = 0.1, 0.9, -0.5
+
+# live reference dataset:
 q1.lr.0.1 <- run_metamod(which_df = live_ref_long, 
                          which_response_column = "absolute_FDSD_effects",
                          moderators = " ~ (set-1)",
@@ -1680,6 +1734,7 @@ q1.lr.neg.0.5 <- run_metamod(which_df = live_ref_long,
                          moderators = " ~ (set-1)",
                          impute_cov_r = -0.5)
 
+# sterile reference dataset:
 
 # directly sourcing previously-saved outcome to save time
 # running the model code may take >5 min
@@ -1704,6 +1759,7 @@ q1.xs.0.9 <- readRDS("code/saved_results/q1.xs.0.9")
 # saveRDS(q1.xs.neg.0.5, "code/saved_results/q1.xs.neg.0.5")
 q1.xs.neg.0.5 <- readRDS("code/saved_results/q1.xs.neg.0.5")
 
+# combine model coefficients together
 varying_imputed_r <- 
   bind_rows(data.frame(conf_int(q1.xs.neg.0.5, vcov = "CR2")),
             data.frame(conf_int(q1.xs.0.1, vcov = "CR2")),
@@ -1756,31 +1812,35 @@ In the influence analysis for live soil references we found two studies that wer
 
 ```{r live-ref-influence, eval = T}
 # influence test
-# find "influential experiments"
+### first, find "influential experiments" --------------------
 cd.exp.q1.lr.0.5 <- cooks.distance.rma.mv(q1.lr.0.5, 
                                           cluster = live_ref_long$Experiment, 
                                           parallel = "multicore")
 
-# which(cd.exp.q1.lr.0.5 > 0.45) # exp.143
-# live_ref_long[live_ref_long$Experiment == 143,] # Kandlikar et al
+# which(cd.exp.q1.lr.0.5 > 0.45) # exp.143 has cooks distance > 0.45
+# live_ref_long[live_ref_long$Experiment == 143,] 
+# This is the experiment by Kandlikar et al.
 
 # plot(cd.exp.q1.lr.0.5, type="o", pch=19, xlab="Experiment", ylab="Cook's Distance")
 # abline(0.45, 0, col = "red")
 
 # re-do analysis without experiment 143
+# filter dataset to exclude exp.143
 live_ref_no_143 <- live_ref_long %>% filter(Experiment != 143)
+# re-run model with filtered dataset
 q1.lr.0.5.no143 <- run_metamod(which_df = live_ref_no_143, 
                                which_response_column = "absolute_FDSD_effects",
                                moderators = " ~ (set-1)",
                                impute_cov_r = 0.5)
-
+# calculate cooks distance for the new model, to detect other influential exp.
 cd.q1.lr.0.5.no143 <- cooks.distance.rma.mv(q1.lr.0.5.no143, 
-                                            cluster = live_ref_no_143$Experiment, 
+                                            cluster = live_ref_no_143$Experiment,
                                             parallel = "multicore")
-# which(cd.q1.lr.0.5.no143 > 0.45) # detect another influential experiment: exp.138
-# live_ref_long[live_ref_long$Experiment == 138,]
+# which(cd.q1.lr.0.5.no143 > 0.45) 
+# detect another influential experiment: exp.138
+# live_ref_long[live_ref_long$Experiment == 138,] # exp. by Miller et al.
 
-# delete this other influential exp.:
+# delete this other influential exp., and re-run meta-analysis:
 live_ref_no_143_138 <- live_ref_long %>% filter(Experiment != 138 & Experiment != 143)
 q1.lr.0.5.no143.138 <- run_metamod(which_df = live_ref_no_143_138, 
                                    which_response_column = "absolute_FDSD_effects",
@@ -1791,11 +1851,12 @@ cd.q1.lr.0.5.no143.138 <- cooks.distance.rma.mv(q1.lr.0.5.no143.138,
                                                 parallel = "multicore")
 # which(cd.q1.lr.0.5.no143.138 > 0.45) # now, no more influential studies
 
+# statistical tests for the updated model
 coef_test(q1.lr.0.5.no143.138, vcov = "CR2") # check if different from zero
 conf_int(q1.lr.0.5.no143.138, vcov = "CR2") # take look at the confidence interval
-q1.lr.trim.wald <- Wald_test(q1.lr.0.5.no143.138, constraints = constrain_equal(1:2), vcov = "CR2")
+q1.lr.trim.wald <- Wald_test(q1.lr.0.5.no143.138, constraints = constrain_equal(1:2), vcov = "CR2") # check if different from each other
 
-# find "influential points"
+### then, find "influential points" -----------------------
 # the code below was run and saved, here just being sourced to save time
 # cd.points.q1.lr.0.5 <- cooks.distance.rma.mv(q1.lr.0.5, parallel = "multicore")
 # write.csv(cd.points.q1.lr.0.5, "code/saved_results/cd.points.q1.lr.0.5.csv")
@@ -1808,7 +1869,7 @@ cd.points.q1.lr.0.5 <- read.csv("code/saved_results/cd.points.q1.lr.0.5.csv", ro
 In the influence analysis for sterile soil references we found one study that was influential; we replicated all analyses without these studies (expand code chunk below for details).
 
 ```{r sterile-ref-influence, eval = T}
-# find "influential experiments"
+### first, find "influential experiments" ------------------
 # the code code was run and saved, here just being sourced to save time
 # directly running the code may take hours
 # cd.exp.q1.xs.0.5<-cooks.distance.rma.mv(q1.xs.0.5, 
@@ -1819,13 +1880,13 @@ In the influence analysis for sterile soil references we found one study that wa
 cd.exp.q1.xs.0.5 <- read.csv("code/saved_results/cd.exp.q1.xs.0.5.csv")
 colnames(cd.exp.q1.xs.0.5) <- c("expt", "cooks_dist")
 
-# cd.exp.q1.xs.0.5[cd.exp.q1.xs.0.5$cooks_dist>0.45, ] # influential experiment = 33; Hendricks et al.
+# cd.exp.q1.xs.0.5[cd.exp.q1.xs.0.5$cooks_dist>0.45, ] # influential experiment = 33; by Hendricks et al.
 #sterile_ref_long[sterile_ref_long$Experiment ==33,] %>% view()
 
 # plot(cd.exp.q1.xs.0.5, type="o", pch=19, xlab="Experiment", ylab="Cook's Distance")
 # abline(0.45, 0, col = "red")
 
-# remove influential experiment 33
+# remove influential experiment 33 to re-run meta-analysis
 sterile_ref_no_33 <- sterile_ref_long %>% filter(Experiment != 33)
 q1.xs.0.5.no33 <- run_metamod(which_df = sterile_ref_no_33, 
                               which_response_column = "absolute_FDSD_effects",
@@ -1840,10 +1901,10 @@ q1.xs.0.5.no33 <- run_metamod(which_df = sterile_ref_no_33,
 
 coef_test(q1.xs.0.5.no33, vcov = "CR2") # check if different from zero
 conf_int(q1.xs.0.5.no33, vcov = "CR2") # take look at the confidence interval
-q1.xs.trim.wald <- Wald_test(q1.xs.0.5.no33, constraints = constrain_equal(1:2), vcov = "CR2")
+q1.xs.trim.wald <- Wald_test(q1.xs.0.5.no33, constraints = constrain_equal(1:2), vcov = "CR2") # check if different from each other
 
 
-# find "influential points"
+### then, find "influential points" ----------------------
 # cd.points.q1.xs.0.5<-cooks.distance.rma.mv(q1.xs.0.5, parallel = "multicore",
 #                                            reestimate = F)
 # write.csv(cd.points.q1.xs.0.5, "code/saved_results/cd.points.q1.xs.0.5.csv")
@@ -1856,18 +1917,19 @@ colnames(cd.points.q1.xs.0.5) <- c("expt", "cooks_dist")
 #### Make plots with & without influential points/expts (Fig.S.6)
 ```{r make-suppfig-influence, eval = T}
 # make dataframe to plot results after deletion
+# for live reference dataset
 q1.lr.deletion.plot <- bind_rows(conf_int(q1.lr.0.5, vcov = "CR2"),
                               #conf_int(q1.lr.0.5.no143, vcov = "CR2"),
                               conf_int(q1.lr.0.5.no143.138, vcov = "CR2")) %>%
   data.frame() %>% 
   rownames_to_column("which")
 
-
 q1.lr.deletion.plot <-
   q1.lr.deletion.plot %>%
   mutate(set = c("FD", "SD", "FD", "SD"),
          set = ifelse(set == "FD", "Fitness difference", "(De)stabilization"))
 
+# for sterile reference dataset
 q1.xs.deletion.plot <- bind_rows(conf_int(q1.xs.0.5, vcov = "CR2"),
                               conf_int(q1.xs.0.5.no33, vcov = "CR2")) %>%
   data.frame() %>% 
@@ -1878,13 +1940,14 @@ q1.xs.deletion.plot <-
   mutate(set = c("FD", "SD", "FD", "SD"),
          set = ifelse(set == "FD", "Fitness difference", "(De)stabilization"))
 
-
+# combine results from both datasets
 q1.deletion.plot <- bind_rows(q1.lr.deletion.plot, q1.xs.deletion.plot) 
 q1.deletion.plot <- q1.deletion.plot %>% 
   mutate(dataset = rep(c("Full", "Full", "Influential\n experiment\n removed", "Influential\n experiment\n removed"), 2))%>%
   mutate(yval= rev(c(1, 1.7, 1.3, 2,
                      2.5, 3.2, 2.8, 3.5)))
 
+# plotting
 q1_deletion_plot <- ggplot(q1.deletion.plot, aes(y = beta, x = yval)) +
   geom_ribbon(aes(x = seq(0.75, 2.25, length.out = 8), ymin = -Inf, ymax = Inf), fill = "grey90") + 
   geom_point(size = 5, aes(color = set, shape = dataset)) +
@@ -1926,10 +1989,11 @@ Across species pairs, what is the net effect of microbes on competitive outcomes
 
 ### Fig.S.7: Meta-analysis approach
 
-Here we do separate meta-analysis models for species pairs each each dataset with stabilizing or destabilizing effects of soil microbes
+First, before looking into each individual species pairs, we start with a meta-analytical approach like Q1 to predict the overall competitive outcome given the *average* microbial effect. Here we do separate meta-analysis models for species pairs each each dataset with stabilizing or destabilizing effects of soil microbes
 
 #### Run meta-analysis for live ref soil
-```{r Q2-meta-analysis-live,  eval = T, cache = T}
+```{r Q2-meta-analysis-live-stab,  eval = T, cache = T}
+# we first examine species pairs where interactions are STABILIZED by microbes
 live_ref_long_q2 <- 
   live_ref_long %>% 
   # Get rid of the rows where SD < 0
@@ -1941,6 +2005,7 @@ live_ref_long_q2 <-
   # Clean up the dataset
   select(-n_rows)
 
+# run meta-analysis on stabilized pairs
 q2.lr.0.5 <- run_metamod(which_df = live_ref_long_q2, 
                          which_response_column = "absolute_FDSD_effects", 
                          moderators = " ~ (set-1)",
@@ -1949,18 +2014,21 @@ q2.lr.0.5 <- run_metamod(which_df = live_ref_long_q2,
 
 **Live reference soil, species pairs with stabilizing effects of soil microbes**
 
-```{r Q2-meta-analysis-live-results, eval = T, results = 'asis', class.source = 'fold-show'}
-# check if different from zero
+```{r Q2-meta-analysis-live-stab-results, eval = T, results = 'asis', class.source = 'fold-show'}
+# check if SD and FD are different from zero
 coef_test(q2.lr.0.5, vcov = "CR2") %>% 
   kable() %>%
   kable_styling(full_width = 0)
-# check if values are different from one another
+# check if they are different from one another
 Wald_test(q2.lr.0.5, constraints = constrain_equal(1:2),  vcov = "CR2") %>% 
   kable() %>%
   kable_styling(full_width = 0)
 ```
+For pairs where interactions are stabilized, their overall fitness difference exceeds the stabilizing effect.
+
 
 ```{r Q2-meta-analysis-live-destab, eval = T, cache = T}
+# next, we look at pairs where interactions are DESTABILIZED by microbes
 live_ref_long_q2_destab <- 
   live_ref_long %>% 
   # Get rid of the rows where SD > 0
@@ -1972,6 +2040,8 @@ live_ref_long_q2_destab <-
   # Clean up the dataset
   select(-n_rows)
 
+# meta-analytical model using only destabilized pairs
+# note that the response variable is the strength (absolute value) of destabilization
 q2.lr.0.5.destab <- run_metamod(which_df = live_ref_long_q2_destab, 
                          which_response_column = "absolute_FDSD_effects", 
                          moderators = " ~ (set-1)",
@@ -1981,20 +2051,22 @@ q2.lr.0.5.destab <- run_metamod(which_df = live_ref_long_q2_destab,
 **Live reference soil, species pairs with destabilizing effects of soil microbes**
 
 ```{r Q2-meta-analysis-live-destab-results, eval = T, results = 'asis', class.source = 'fold-show'}
-# check if different from zero
+# check if the strength of destabilization and FD are different from zero
 coef_test(q2.lr.0.5.destab, vcov = "CR2") %>% 
   kable() %>%
   kable_styling(full_width = 0)
 
-# check if values are different from one another
+# check if the strength of destabilization and FD are different from one another
 Wald_test(q2.lr.0.5.destab, constraints = constrain_equal(1:2),  vcov = "CR2") %>% 
   kable() %>%
   kable_styling(full_width = 0)
 ```
+For pairs where interactions are destabilized, their magnitude of destabilizing effect are not significantly different from FD.
 
 
 #### Run meta-analysis for sterile ref soil
-```{r Q2-meta-analysis-sterile,  cache = T, eval = T}
+```{r Q2-meta-analysis-sterile-stab,  cache = T, eval = T}
+# start with stabilized pairs:
 sterile_ref_long_q2 <- 
   sterile_ref_long %>% 
   # Get rid of the rows where SD < 0
@@ -2006,6 +2078,7 @@ sterile_ref_long_q2 <-
   # Clean up the dataset
   select(-n_rows)
 
+# run meta-analysis on stabilized pairs
 q2.xs.0.5 <- run_metamod(which_df = sterile_ref_long_q2, 
                          which_response_column = "absolute_FDSD_effects", 
                          moderators = " ~ (set-1)",
@@ -2014,19 +2087,21 @@ q2.xs.0.5 <- run_metamod(which_df = sterile_ref_long_q2,
 
 **Sterile reference soils, species pairs with stabilizing effects of soil microbes**
 
-```{r Q2-meta-analysis-sterile-results, eval = T, results = 'asis', class.source = 'fold-show'}
-# check if different from zero
+```{r Q2-meta-analysis-sterile-stab-results, eval = T, results = 'asis', class.source = 'fold-show'}
+# check stabilization and FD are different from zero
 coef_test(q2.xs.0.5, vcov = "CR2") %>% 
   kable() %>%
   kable_styling(full_width = F)
-# check if values are different from one another
+# check if they are different from one another
 Wald_test(q2.xs.0.5, constraints = constrain_equal(1:2),  vcov = "CR2") %>% 
   kable() %>%
   kable_styling(full_width = F)
 ```
+for pairs where interactions are stabilized, their overall FD exceed the magnitude of stabilizing effect
 
 
 ```{r Q2-meta-analysis-sterile-destab, eval = T, cache = T}
+# then focus on destabilized pairs:
 sterile_ref_long_q2_destab <- 
   sterile_ref_long %>% 
   # Get rid of the rows where SD > 0
@@ -2038,6 +2113,7 @@ sterile_ref_long_q2_destab <-
   # Clean up the dataset
   select(-n_rows)
 
+# run meta-analysis on destabilized pairs:
 q2.xs.0.5.destab <- run_metamod(which_df = sterile_ref_long_q2_destab, 
                          which_response_column = "absolute_FDSD_effects", 
                          moderators = " ~ (set-1)",
@@ -2047,24 +2123,25 @@ q2.xs.0.5.destab <- run_metamod(which_df = sterile_ref_long_q2_destab,
 **Sterile reference soil, species pairs with destabilizing effects of soil microbes**
 
 ```{r Q2-meta-analysis-sterile-destab-results, eval = T, results = 'asis', class.source = 'fold-show'}
-# check if different from zero
+# check if FD and strength of destabilization are different from zero
 coef_test(q2.xs.0.5.destab, vcov = "CR2") %>% 
   kable() %>%
   kable_styling(full_width = F) 
 
-# check if values are different from one another
+# check if they are different from one another
 Wald_test(q2.xs.0.5.destab, constraints = constrain_equal(1:2),  vcov = "CR2") %>% 
   kable() %>%
   kable_styling(full_width = F)
-
 ```
+For pairs where interactions are destabilized, their overall FD exceeds the magnitude of destabilizing effect.
+
 
 #### Make plots (Fig.S.7)
 
 **For pairs with stabilizing effects (both reference types)**
 
 ```{r make-Q2-meta-analysis-plots-stab, eval = T, cache = T}
-
+# combine results (estimates) from both reference datasets:
 q2b_plots_df_stabilizing <- bind_rows(
   data.frame(conf_int(q2.xs.0.5, vcov = "CR2")),
   data.frame(conf_int(q2.lr.0.5, vcov = "CR2"))
@@ -2077,6 +2154,7 @@ q2b_plots_df_stabilizing <-
          effect_type = rep(c("Fitness difference", 
                  "(De)stabilization"), 2))
 
+# calculating prediction intervals of estimated SD and FD
 q2.stab.prediction_intervals <- bind_rows(data.frame(predict.rma(q2.xs.0.5)[1:2,]),
                                   data.frame(predict.rma(q2.lr.0.5)[1:2,])) %>%
   mutate(which_source = rep(c("XS", "LR"), each = 2),
@@ -2084,7 +2162,7 @@ q2.stab.prediction_intervals <- bind_rows(data.frame(predict.rma(q2.xs.0.5)[1:2,
 
 q2b_plots_df_stabilizing <- left_join(x = q2b_plots_df_stabilizing, y = q2.stab.prediction_intervals, by = c("effect_type", "which_source"))
 
-
+# plotting
 (q2_plot_stabilizing <- 
     ggplot(q2b_plots_df_stabilizing) +
     ggbeeswarm::geom_quasirandom(data = sterile_ref_long_q2,
@@ -2136,6 +2214,7 @@ q2b_plots_df_stabilizing <- left_join(x = q2b_plots_df_stabilizing, y = q2.stab.
 **For pairs with destabilizing effects (both reference types)**
 
 ```{r make-Q2-meta-analysis-plots-destab, eval = T}
+# combine results (estimates) from both reference datasets:
 q2b_plots_df_destabilizing <- bind_rows(
   data.frame(conf_int(q2.xs.0.5.destab, vcov = "CR2")),
   data.frame(conf_int(q2.lr.0.5.destab, vcov = "CR2"))
@@ -2148,6 +2227,7 @@ q2b_plots_df_destabilizing <-
          effect_type = rep(c("Fitness difference", 
                  "(De)stabilization"), 2))
 
+# calculating prediction intervals for destailization and FD estimates
 q2.destab.prediction_intervals <- bind_rows(data.frame(predict.rma(q2.xs.0.5.destab)[1:2,]),
                                           data.frame(predict.rma(q2.lr.0.5.destab)[1:2,])) %>%
   mutate(which_source = rep(c("XS", "LR"), each = 2),
@@ -2157,6 +2237,7 @@ q2b_plots_df_destabilizing <- left_join(x = q2b_plots_df_destabilizing,
                                         y = q2.destab.prediction_intervals, 
                                         by = c("effect_type", "which_source"))
 
+# plotting
 (q2_plot_destabilizing <- ggplot(q2b_plots_df_destabilizing) +
   ggbeeswarm::geom_quasirandom(data = sterile_ref_long_q2_destab,
                                aes(x = absolute_FDSD_effects, y = yval, size = scale, color = effect_type),
@@ -2209,6 +2290,7 @@ q2b_plots_df_destabilizing <- left_join(x = q2b_plots_df_destabilizing,
 *For the supplemental figures we put these two panels together into one figure, see code below for details.*
 
 ```{r make-Q2-meta-combined-plot, eval = T}
+# combine figures of stabilizing and destabilizing pairs
 q2b_plot <- q2_plot_stabilizing + q2_plot_destabilizing
 if(save_figures) {
   ggsave("figures/q2_meta-plot.png", width = 11, height = 5)
@@ -2219,9 +2301,9 @@ Figure S.7
 
 ### Pairwise direct comparison (of ND and FD)
 
-We first evaluate the pairwise competitive outcome by directly comparing the mean niche and fitness differences within species pairs.
+To evaluate the pairwise competitive outcome, We first do so by directly comparing the mean niche and fitness differences within species pairs.
 
-#### Live soil
+#### Live reference dataset
 ```{r pairwise-comparison-live, eval = T}
 # how many pairs are coexistence by MEAN FD and SD
 # sum(live_ref$mean_SD>0 & live_ref$mean_IGR >0)
@@ -2237,7 +2319,7 @@ paste0("priority effects: ", percent(sum(live_ref$mean_SD<0 & abs(live_ref$mean_
 paste0("exclusions: ", percent(sum(abs(live_ref$mean_SD)<live_ref$abs_FD)/nrow(live_ref)))
 ```
 
-#### Sterile soil
+#### Sterile reference dataset
 ```{r pairwise-comparison-sterile, eval = T}
 # sum(sterile_ref$mean_SD>0 & sterile_ref$mean_IGR >0)
 # how frequently are coexistence?
@@ -2254,19 +2336,22 @@ paste0("competitive exclusion: ", percent(sum(abs(sterile_ref$mean_SD)<sterile_r
 
 ### Fig.4: Pairwise sampling approach 
 
-To do this sampling, we use the custom function `simulation_ci`, which we have defined in the earlier section "Define functions & prepare data". 
+We further incorporate empirical uncertainties into the inference via a sampling approach. To do this sampling, we use the custom function `simulation_ci`, which we have defined in the earlier section "Define functions & prepare data". 
 
-#### Live soil
+#### Live reference dataset
 ```{r simulation-livesoil, eval = T, cache = T, warning = FALSE}
+# simulate competitive outcomes based on distributions 
+# with the mean and sd of each pairwise comparisons
 FL_simulation_out <- simulation_ci(data_with_SDFD = live_ref)
 live_ref_sims <- FL_simulation_out$outcomes_by_pair
 live_ref_sims_by_run <- FL_simulation_out$outcomes_by_run
 
-# Define a new function to summarize outcomes
+# Define a new function to summarize simulation outcomes
 percent_outcomes <- function(outcomes_by_run) {
   format_range <- function(range) {
     paste0(range[2], " (", range[1], "-", range[3],")")
   }
+  # the 5%, 50%, and 95% quantiles for numbers of coexistence outcomes
   range.exclusion <-  percent(quantile(outcomes_by_run$n_reps_exclusion/rowSums(outcomes_by_run), 
                                        c(0.05, 0.5, 0.95)), accuracy = .1) %>% format_range
   range.coex <- percent(quantile(outcomes_by_run$n_reps_coex/rowSums(outcomes_by_run), 
@@ -2278,11 +2363,13 @@ percent_outcomes <- function(outcomes_by_run) {
 
 percent_outcomes(live_ref_sims_by_run)
 
+# define the data range of the plot
 x_min <- with(live_ref_sims, min(mean_SD))-0.1
 x_max <- with(live_ref_sims, max(mean_SD))+0.1
 y_min <- with(live_ref_sims, min(abs(mean_FD)))-0.15
 y_max <- with(live_ref_sims, max(abs(mean_FD)))+0.15
 
+# adapt a previously defined base plot
 base_coex_plot1 <- base_coex_plot
 base_coex_plot1$layers[7:8] <- NULL
 base_coex_plot1 <- base_coex_plot1 +   
@@ -2291,6 +2378,7 @@ base_coex_plot1 <- base_coex_plot1 +
   theme(axis.title.x = element_text(margin = margin(t = 0)))
 # base_coex_plot1
 
+# plotting
 (scatterpie_FL <- base_coex_plot1 +
   scale_x_continuous(limits = c(x_min, x_max)) +
   scale_y_continuous(limits = c(y_min-0.05, y_max)) +
@@ -2322,21 +2410,26 @@ base_coex_plot1 <- base_coex_plot1 +
 
 
 
-#### Sterile soil
+#### Sterile reference dataset
 
 ```{r simulation-sterilesoil, eval = T, cache = T, warning = FALSE}
+# simulate competitive outcomes based on distributions 
+# with the mean and sd of each pairwise comparisons
+# details see the function `simulation_ci` defined at the beginning
 sterile_simulation_out <- simulation_ci(data_with_SDFD = sterile_ref)
 sterile_ref_sims <- sterile_simulation_out$outcomes_by_pair
 sterile_ref_sims_by_run <- sterile_simulation_out$outcomes_by_run
 
+# call the function defined above to summarize simulation outcomes
 percent_outcomes(sterile_ref_sims_by_run)
 
+# define data range for plotting
 x_min <- with(sterile_ref_sims, min(mean_SD))-1
 x_max <- with(sterile_ref_sims, max(mean_SD))+1
 y_min <- with(sterile_ref_sims, min(abs(mean_FD)))-0.15
 y_max <- with(sterile_ref_sims, max(abs(mean_FD)))+0.15
 
-
+# plotting
 (scatterpie_XS_all <- 
     base_coex_plot1 +
     scale_x_continuous(limits = c(x_min, x_max)) +
@@ -2390,105 +2483,111 @@ if(save_figures) {
 Now we can do a sort of "Moderator analysis" for this sampling approach. 
 
 ```{r simulation-moderator-analysis, eval = T}
-# "Moderator analysis"
+### "Moderator analysis"
 
-FL_simulation_out_FILow <- simulation_ci(data_with_SDFD = live_ref %>% filter(`Fraction inoculum` < 0.251))
+### live reference dataset ----------------------
+# percentage outcomes in pairs using Low fraction of inoculum
+FL_simulation_out_FILow <- simulation_ci(data_with_SDFD = live_ref %>% filter(`Fraction inoculum` <= 0.25))
 # percent_outcomes(FL_simulation_out_FILow$outcomes_by_run)
-
+ 
+# percentage outcomes in pairs using High fraction of inoculum
 FL_simulation_out_FIHigh <- simulation_ci(data_with_SDFD = live_ref %>% filter(`Fraction inoculum` > 0.25))
 # percent_outcomes(FL_simulation_out_FIHigh$outcomes_by_run)
 
+
+# percent outcomes: training environment in Lab/Greenhouse
 FL_simulation_out_TrainGreenhouse <- simulation_ci(data_with_SDFD = live_ref %>% filter(`Training environment` == "Lab"))
 # percent_outcomes(FL_simulation_out_TrainGreenhouse$outcomes_by_run)
 
+# percent outcomes: training environment in Field
 FL_simulation_out_TrainField <- simulation_ci(data_with_SDFD = live_ref %>% filter(`Training environment` == "Field"))
 # percent_outcomes(FL_simulation_out_TrainField$outcomes_by_run)
 
 
+# percent outcomes: response plants grew individually
 FL_simulation_out_ResponseInd <- simulation_ci(data_with_SDFD = live_ref %>% filter(`Testing community` == "Individual"))
 # percent_outcomes(FL_simulation_out_ResponseInd$outcomes_by_run)
 
+# percent outcomes: response plants grew in communities
 FL_simulation_out_ResponseComm <- simulation_ci(data_with_SDFD = live_ref %>% filter(`Testing community` == "Community"))
 # percent_outcomes(FL_simulation_out_ResponseComm$outcomes_by_run)
 
+# percent outcomes: response plants grew in populations
 FL_simulation_out_ResponsePop <- simulation_ci(data_with_SDFD = live_ref %>% filter(`Testing community` == "Population"))
 # percent_outcomes(FL_simulation_out_ResponsePop$outcomes_by_run)
 
 
-
-XS_simulation_out_FILow <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(`Fraction inoculum` < 0.251))
+### sterile reference dataset --------------------------
+# percent outcomes: Low fraction inoculum
+XS_simulation_out_FILow <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(`Fraction inoculum` < 0.25))
 # percent_outcomes(XS_simulation_out_FILow$outcomes_by_run)
 
+# percent outcomes: High fraction inoculum
 XS_simulation_out_FIHigh <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(`Fraction inoculum` > 0.25))
 # percent_outcomes(XS_simulation_out_FIHigh$outcomes_by_run)
 
+
+# percent outcomes: training environment in Lab/Greenhouse
 XS_simulation_out_TrainGreenhouse <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(`Training environment` == "Lab"))
 # percent_outcomes(XS_simulation_out_TrainGreenhouse$outcomes_by_run)
 
+# percent outcomes: training environment in Field
 XS_simulation_out_TrainField <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(`Training environment` == "Field"))
 # percent_outcomes(XS_simulation_out_TrainField$outcomes_by_run)
 
 
+# percent outcomes: response plants grew individually
 XS_simulation_out_ResponseInd <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(`Testing community` == "Individual"))
 # percent_outcomes(XS_simulation_out_ResponseInd$outcomes_by_run)
 
+# percent outcomes: response plants grew in communities
 XS_simulation_out_ResponseComm <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(`Testing community` == "Community"))
 # percent_outcomes(XS_simulation_out_ResponseComm$outcomes_by_run)
 
+# percent outcomes: response plants grew in populations
 XS_simulation_out_ResponsePop <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(`Testing community` == "Population"))
 # percent_outcomes(XS_simulation_out_ResponsePop$outcomes_by_run)
 
-XS_simulation_out_TrainGreenhouse <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(`Training environment` == "Lab"))
-# percent_outcomes(XS_simulation_out_TrainGreenhouse$outcomes_by_run)
 
-XS_simulation_out_TrainField <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(`Training environment` == "Field"))
-# percent_outcomes(XS_simulation_out_TrainField$outcomes_by_run)
-
-
-XS_simulation_out_ResponseInd <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(`Testing community` == "Individual"))
-# percent_outcomes(XS_simulation_out_ResponseInd$outcomes_by_run)
-
-XS_simulation_out_ResponseComm <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(`Testing community` == "Community"))
-# percent_outcomes(XS_simulation_out_ResponseComm$outcomes_by_run)
-
-XS_simulation_out_ResponsePop <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(`Testing community` == "Population"))
-# percent_outcomes(XS_simulation_out_ResponsePop$outcomes_by_run)
-
+# percent outcomes: autoclaving as the sterilization method
 XS_simulation_out_SterileAutoclave <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(Study_sterilization_method == "autoclaving"))
 # percent_outcomes(XS_simulation_out_SterileAutoclave$outcomes_by_run)
 
-XS_simulation_out_SterileAutoclave <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(Study_sterilization_method == "autoclaving"))
-# percent_outcomes(XS_simulation_out_SterileAutoclave$outcomes_by_run)
-
+# percent outcomes: gamma irradiation as the sterilization method
 XS_simulation_out_SterileGamma <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(Study_sterilization_method == "gamma irradiation"))
 # percent_outcomes(XS_simulation_out_SterileGamma$outcomes_by_run)
 
+# percent outcomes: heating as the sterilization method
 XS_simulation_out_SterileHeat <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(Study_sterilization_method == "heating"))
 # percent_outcomes(XS_simulation_out_SterileHeat$outcomes_by_run)
 
-XS_simulation_out_SterileOther <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(!(Study_sterilization_method %in%  
-                                                                                         c("autoclaving", "gamma irradiation", "heating"))))
+# percent outcomes: other sterilization method
+XS_simulation_out_SterileOther <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(!(Study_sterilization_method %in%                                                   c("autoclaving", "gamma irradiation", "heating"))))
 # percent_outcomes(XS_simulation_out_SterileOther$outcomes_by_run)
 
 
+# percent outcomes: sterilized soil came from the greenhouse
 XS_simulation_out_SterileSoilGreenhouse <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(control_type == "GS"))
 # percent_outcomes(XS_simulation_out_SterileSoilGreenhouse$outcomes_by_run)
 
+# percent outcomes: sterilized soil came from the field
 XS_simulation_out_SterileSoilField <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(control_type == "FS"))
 # percent_outcomes(XS_simulation_out_SterileSoilField$outcomes_by_run)
 
+# percent outcomes: sterilized soil came from cultivated soil
 XS_simulation_out_SterileSoilCS <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(control_type == "CS"))
 # percent_outcomes(XS_simulation_out_SterileSoilCS$outcomes_by_run)
 
+# percent outcomes: sterilized soil came from cultivated and mixed soil
 XS_simulation_out_SterileSoilCmS <- simulation_ci(data_with_SDFD = sterile_ref %>% filter(control_type == "CmS"))
 # percent_outcomes(XS_simulation_out_SterileSoilCmS$outcomes_by_run)
-# 
 ```
 
 #### **Table S.1: table of outcomes for live soil reference**
 
 ```{r make-simulation-table-live, eval = T, warning=FALSE}
 options(kableExtra.latex.load_packages = FALSE)
+# combining 'moderator analysis' results for the sampling of live reference data 
 table_of_things <-
   rbind(c("Overall",(t(unlist(percent_outcomes(live_ref_sims_by_run))))),
 
@@ -2555,6 +2654,7 @@ Table S.1
 
 #### **Table S.2: table of outcomes for sterile soil reference**
 ```{r make-simulation-table-sterile, eval = T}
+# combining 'moderator analysis' results for the sampling of sterile reference data
 table_of_things_sterile <-
   rbind(c("Overall",(t(unlist(percent_outcomes(sterile_ref_sims_by_run))))),
         
@@ -2603,7 +2703,7 @@ if(save_figures) {
   saveRDS(object = table_of_things_sterile, file = "figures/table_S2.Rds")  
 }
 
-
+# print results in HTML
 rbind(c("Overall",(t(unlist(percent_outcomes(sterile_ref_sims_by_run))))),
       
       c("Low",t(unlist(percent_outcomes(XS_simulation_out_FILow$outcomes_by_run)))),
@@ -2647,7 +2747,9 @@ Table S.2
 
 ## Additional supplemental analyses
 ### Fig.S.8: analysis to justify Q2 pairwise approaches
+Looking at competitive outcomes at the species pair level can reveal patterns that may otherwise hidden using the meta-analytical approach. For example, even when microbes drive stronger fitness differences than stabilization on average, they can still favor coexistence for a substantial fraction of species pairs, especially if these effects are negatively correlated. Here we illustrate this scenario.  
 ```{r q2-reason, eval = TRUE, cache = T, warning=FALSE}
+# set seed for reproducibility 
 set.seed(680)
 
 # sample a dataframe with negatively correlated SD & FD
@@ -2662,6 +2764,7 @@ fdsd_sim <- data.frame(fd = out[,1],
 fdsd_sim %>%
   count(coex)
 
+# plotting points with simulated SD & FD, and label their predicted outcomes
 base_coex_plot2 <- base_coex_plot
 base_coex_plot2$layers[7] <- NULL
 supfig_panel1 <- 
@@ -2682,6 +2785,7 @@ supfig_panel1 <-
                           'Exclusion (n = 27 pairs)')),
             color = c("grey5", "dodgerblue4"), size = 5)
 
+# make dataframe to plot the SD and FD of datapoints and their mean horizontally
 fdsd_sim_long <- 
   fdsd_sim %>%
   select(-coex) %>%
@@ -2697,6 +2801,7 @@ fdsd_sim_sum <-
             sem = sd(value)/sqrt(n())) %>%
   mutate(yval = ifelse(name == "fd", 1.5, 0.5))
 
+# plot those datapoints horizontally
 supfig_panel2 <- ggplot(fdsd_sim_long) +
   geom_quasirandom(aes(x = value, y = yval, color = name), 
                    fill = "transparent", width = 0.2, 
@@ -2714,7 +2819,7 @@ supfig_panel2 <- ggplot(fdsd_sim_long) +
   scale_color_manual(name = "Effect size", values = rev(c("#CC79A7", "#009E73"))) +
   theme(axis.text.y = element_text(color = "black", size = 11))
             
-
+# combine plots together
 q2_reason_plot <- supfig_panel2 / plot_spacer() / supfig_panel1 + 
   plot_annotation(tag_levels = "A") + 
   plot_layout(heights = c(1,0.5, 4)) & 
@@ -2735,9 +2840,11 @@ Figure S.8.
 Instead of analyzing the *magnitude* of the (de)stabilizing effect (by taking the absolute value), here we analyze the actual value of the (de)stabilization metric. This is akin to the meta-analysis model of $I_S$ in Crawford et al. (2019)'s paper. 
 
 ```{r supp-q1-univariate-DeStab, eval = T}
-# Univariate analysis of the (De)stabilization metric
+# Univariate analysis of the stabilization metric
 
+# combine data from both reference datasets
 combined <- bind_rows(live_ref, sterile_ref)
+# run a random effect model on the stabilization metric
 combined_SD_efect <- rma.mv(mean_SD, V = var_SD, 
                             random = list(~1|Experiment, 
                                           ~1|species_pair), 
@@ -2748,7 +2855,7 @@ combined_SD_efect
 
 Now we can make an orchard plot of the (de)stabilization metric. 
 ```{r orchard-DeStab, eval = T, fig.height = 3}
-
+# precision = 1/SE
 combined$Precision <- (1/sqrt(combined$var_SD))
 
 overall_stabilization_plot <- 
@@ -2808,13 +2915,13 @@ live_ref_plot <-
   # Add a new column with just the row number
   mutate(row_num = rev(row_number()))
 
-
+# counts of datapoints per study
 helper <- live_ref_plot %>% 
   group_by(Study, author) %>% 
   summarize(mean_row = ceiling(mean(row_num)),
             min_row = min(row_num))
 
-
+# plotting
 fx_plot <- 
   ggplot(data = live_ref_plot) +
   scale_y_continuous(limits = c(0, 73), breaks = helper$mean_row, 
@@ -2920,11 +3027,13 @@ if(save_figures) {
 Finally we want to just double check that our data extraction protocol to get the estimates of plant growth in reference soils gives the same results as Crawford et al's extractions (when we apply our protocol to non-reference growth).
 
 ```{r compare-data-extractions, eval = T, message=FALSE, warning=FALSE}
-
+# load data where we re-extracted part of the datat from Crawford et al. 2019
 comparison_df <- read_csv("data/crawford-yan-extractions.csv")
+# filter out the data that we didn't reextract
 comparison_df_filt <- comparison_df %>%
   filter(!is.na(AinA_mean_reestimate))
 
+# make dataframe to combine the original value and our re-extracted value
 df_to_plot <- data.frame(crawford_estimates = c(comparison_df_filt$`AinA mean`, 
                                                 comparison_df_filt$`AinB mean`, 
                                                 comparison_df_filt$`BinA mean`, 
@@ -2934,10 +3043,11 @@ df_to_plot <- data.frame(crawford_estimates = c(comparison_df_filt$`AinA mean`,
                                              comparison_df_filt$BinA_mean_reestimate,
                                              comparison_df_filt$BinB_mean_reestimate))
 
+# test the correlation of original vs. reextracted values
 cor.test(df_to_plot$crawford_estimates, df_to_plot$yan_reestimates)
 
 
-
+# visualize the comparison
 comparison_plot <- 
   ggplot(df_to_plot, aes(x = crawford_estimates, y = yan_reestimates)) +
   geom_point(size = 2, shape = 21, stroke = 1) + 
