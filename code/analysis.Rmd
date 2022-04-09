@@ -702,7 +702,9 @@ cat(paste0("&emsp; Number of unique experiments in Sterile ref dataset: ",
            sterile_ref$Experiment %>% unique %>% length))
 ```
 
-We can also do some summaries of the 4-5 moderators we are going to use later on in the analysis. First for the **Live reference** dataset: 
+We can also do some summaries of the 4-5 moderators we are going to use later on in the analysis. 
+
+First for the **Live reference** dataset: 
 
 ```{r show-moderators-live, eval = T}
 # how many pairwise comparisons are there that used Lab vs. Field training environment?
@@ -766,7 +768,7 @@ sterile_ref %>%
 
 Before starting on the meta-analysis models, we should do some more data exploration. First let us evaluate patterns of conspecific and heterospecific effects of soil microbes (boxplots of the conspecific effects of microbes ($m_{1A}$ and $m_{2B}$) vs heterospecific effects ($m_{1B}$ and $m_{2A}$)): 
 
-```{r consp-v-heterosp-effect, eval = T}
+```{r consp-v-heterosp-effect, warning = F, eval = T}
 # magnitude of con- vs. hetero-specific effects in the live reference dataset
 live_ref %>%
   mutate(m1A = log(`AinA mean`) - log(`AinR mean`),
@@ -1808,7 +1810,7 @@ To check the sensitivity of the Q1 multivariate models to certain influential ex
 
 #### Influence test for model with live reference data
 
-In the influence analysis for live soil references we found two studies that were influential; we replicated all analyses without these studies (expand code chunk below for details).
+In the influence analysis for live soil references we found two studies that were influential; we replicated all analyses without these studies. Below shows the coefficients and CI of the updated model, expand code chunk for details.
 
 ```{r live-ref-influence, eval = T}
 # influence test
@@ -1866,7 +1868,7 @@ cd.points.q1.lr.0.5 <- read.csv("code/saved_results/cd.points.q1.lr.0.5.csv", ro
 
 #### Influence test for model with sterile reference data
 
-In the influence analysis for sterile soil references we found one study that was influential; we replicated all analyses without these studies (expand code chunk below for details).
+In the influence analysis for sterile soil references we found one study that was influential; we replicated all analyses without that study. Below shows the coefficients and CI of the updated model, expand code chunk for details.
 
 ```{r sterile-ref-influence, eval = T}
 ### first, find "influential experiments" ------------------
@@ -2097,7 +2099,7 @@ Wald_test(q2.xs.0.5, constraints = constrain_equal(1:2),  vcov = "CR2") %>%
   kable() %>%
   kable_styling(full_width = F)
 ```
-for pairs where interactions are stabilized, their overall FD exceed the magnitude of stabilizing effect
+for pairs where interactions are stabilized, their overall FD exceeds the magnitude of stabilizing effect
 
 
 ```{r Q2-meta-analysis-sterile-destab, eval = T, cache = T}
@@ -2134,6 +2136,7 @@ Wald_test(q2.xs.0.5.destab, constraints = constrain_equal(1:2),  vcov = "CR2") %
   kable_styling(full_width = F)
 ```
 For pairs where interactions are destabilized, their overall FD exceeds the magnitude of destabilizing effect.
+
 
 
 #### Make plots (Fig.S.7)
@@ -2301,7 +2304,7 @@ Figure S.7
 
 ### Pairwise direct comparison (of ND and FD)
 
-To evaluate the pairwise competitive outcome, We first do so by directly comparing the mean niche and fitness differences within species pairs.
+To evaluate the pairwise competitive outcome, We first do so by directly comparing the mean niche and fitness differences within species pairs. Below shows the resulting percentage of species pairs in which soil microbes are predicted to drive coexistence, competitive exclusion, and priority effects.
 
 #### Live reference dataset
 ```{r pairwise-comparison-live, eval = T}
@@ -2853,7 +2856,7 @@ combined_SD_efect <- rma.mv(mean_SD, V = var_SD,
 combined_SD_efect 
 ```
 
-Now we can make an orchard plot of the (de)stabilization metric. 
+The statistical test shows that soil microbes generate strong stabilizing effect, which is consistent with the results by Crawford et al. (2019). Now we can make an orchard plot of the (de)stabilization metric. 
 ```{r orchard-DeStab, eval = T, fig.height = 3}
 # precision = 1/SE
 combined$Precision <- (1/sqrt(combined$var_SD))
@@ -2896,8 +2899,9 @@ if(save_figures) {
 Figure. S.9
 
 
-### Catterpillar-like plots
-```{r catterpillar-plots, eval = T, fig.height = 8}
+### Caterpillar-like plots
+#### live reference dataset
+```{r catterpillar-plots, eval = T, message = F, fig.height = 8}
 # For Live soil reference --------- 
 live_ref_plot <- 
   live_ref %>%
@@ -2956,6 +2960,7 @@ fx_plot
 
 ```
 
+#### sterile reference dataset
 ```{r catterpillar-plots-2, eval = T, message=FALSE, warning=FALSE, fig.height = 20}
 # For sterile reference soil ----------
 XS_ref_plot <- 
@@ -3063,6 +3068,7 @@ comparison_plot <-
 
 comparison_plot
 ```
+From both the correlation test and the visualization, our re-extracted values well correspond to the original values extracted by Crawford et al., indicating consistency in the data extraction by the two studies.
 
 -------------
 ## Session info
