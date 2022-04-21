@@ -14,28 +14,30 @@ chunk_output_type: console
 ---
 
 
-```{r setup, include=FALSE}
+# `R` code to reproduce all results 
+
+This file contains code for reproducing results from Yan et al. 'A quantitative synthesis of soil microbial effects on plant species coexistence'.
+
+The html document mostly shows the output rather than the underlying code. **Click on the 'Code' button on the right to expand or hide the code.**
+
+
+```{r setup, include = FALSE}
 knitr::opts_chunk$set(echo = TRUE, cache = T, eval = FALSE)
 save_figures <- FALSE
-library(ggplot2)
-library(readr)
-library(dplyr)
-library(tidyr)
-library(tibble)
-library(metafor) # for meta-analysis
-library(clubSandwich) # for statistical test
-library(patchwork)
-library(scales)
-library(scatterpie) # for scatterpie plot fig.4
-library(tibble)
-library(stringr)
-library(deSolve)
-library(latex2exp)
-library(ggtext)
-library(knitr)
-library(kableExtra)
-library(ggbeeswarm)
-library(faux) # for sampling, justify q2
+
+# Package management
+# list of packages
+requirements <- c("clubSandwich", "deSolve", "dplyr", "faux", "ggbeeswarm", 
+                  "ggplot2", "ggtext", "ggpubr", "latex2exp", "tibble", "tidyr", 
+                  "kableExtra", "knitr", "metafor", "patchwork", "readr", 
+                  "scales", "scatterpie", "stringr", "tibble")
+# Load the required packages, or if a package is not available, install from CRAN
+lapply(requirements, function(x) {
+  if(!require(x, character.only = T)){
+    install.packages(x)
+  }
+})
+
 # Set plot theme
 theme_plots <- function() {
   theme_minimal()+
@@ -49,15 +51,12 @@ theme_plots <- function() {
 
 ```
 
-# `R` code to recreate all results 
+## Make conceptual figure (Fig 1)
 
-This file contains code for reproducing results from Yan et al. 'A quantitative synthesis of soil microbial effects on plant species coexistence'.
+### Make middle panel of Fig 1
 
-The html document mostly shows the output rather than the underlying code. Click on the 'Code' button to the right to expand or hide the code.
-
-## Make conceptual figures
-
-The first goal is to make a base plot of stabilization/fitness differences onto which we can add species pairs. We will use this base plot to make the middle panel of Figure 1, and also to make Figure 4 in the paper. 
+The first goal is to make a base plot of stabilization/fitness differences onto which we can add species pairs. We will use this base plot to make the middle panel of **Figure 1**. This figure is also used later on to make Figure 4 in the paper.  
+*Click `code` on the right to see the code for making the middle panel of Figure 1.*
 
 ```{r make-base-coex-plot, eval = T, warning = FALSE}
 # Make a base plot that can be modified for each sub question  
@@ -87,16 +86,13 @@ base_coex_plot <-
            colour = "grey25", size = 0.5, arrow = arrow(length = unit(0.075, "inches"))) +
   theme_plots() + 
   theme(axis.line = element_blank())
-
-# base_coex_plot
 ```
 
 
-### Figure 1
+### Make trajectories (outer panels of Fig 1)
 
-In Figure 1, we illustrate the possible outcomes of the plant-soil feedback model (coexistence/priority effects/exclusion). We use the base plot made above as the middle panel, and then add trajectories/graphics around the outside to illustrate potential outcomes. 
-
-Figure 1 focuses on dynamics when microbes tend to hurt plant growth (negative values for all $m$ terms). Figure S1 illustrates how all outcomes are possible even when microbes benefit plant growth (positive values for all $m$ terms).
+In Figure 1, we illustrate the possible outcomes of the plant-soil feedback model (coexistence/priority effects/exclusion). We use the base plot made above as the middle panel, and then add trajectories/graphics around the outside to illustrate potential outcomes.   
+*Click `code` on the right to see the code for making the outer panels of Figure 1.*
 
 ```{r conceptual-fig1, eval = T, cache = T, warning = F, message = F, fig.height = 4, fig.width = 8}
 # Write a function that we can later use to simulate model dynamics using deSolve
@@ -136,24 +132,24 @@ params_excl2 = c(m1A = -.1, m1B = -0.9, m2A = -.2, m2B = -.55, v = 1)
 time <- seq(0, 20, 0.1)
 init = c(pA = 0.3, pAlpha = 0.3)
 
-# run psf_model() using deSolve::ode()
+# run psf_model() using ode()
 # we run several different scenarios using the parameter vectors defined above.
-out_coex <- data.frame(deSolve::ode(func = psf_model,
+out_coex <- data.frame(ode(func = psf_model,
                                     y = init, times = time, parms = params_coex)) 
-out_excl <- data.frame(deSolve::ode(func = psf_model,
+out_excl <- data.frame(ode(func = psf_model,
                                     y = init, times = time, parms = params_excl)) 
 
 # For priority effects and exclusion with destabilization, we need to run two 
 # simulations with different initial conditions. 
-out_priority <- data.frame(deSolve::ode(func = psf_model,
+out_priority <- data.frame(ode(func = psf_model,
                                         y = init, times = time, parms = params_priority)) 
 
-out_priority2 <- data.frame(deSolve::ode(func = psf_model,
+out_priority2 <- data.frame(ode(func = psf_model,
                                          y = c(pA = 0.7, pAlpha = 0.7), 
                                          times = time, parms = params_priority)) 
-out_excl2 <- data.frame(deSolve::ode(func = psf_model,
+out_excl2 <- data.frame(ode(func = psf_model,
                                      y = init, times = time, parms = params_excl2)) 
-out_excl2b <- data.frame(deSolve::ode(func = psf_model,
+out_excl2b <- data.frame(ode(func = psf_model,
                                       y = c(pA = 0.7, pAlpha = 0.7), 
                                       times = time, parms = params_excl2)) 
 
@@ -250,9 +246,17 @@ plot_traj3 <- {make_sim_plot(out_priority) +
 plot_traj4 <- {make_sim_plot(out_excl2)  + 
     labs(subtitle = "Note that outcome is independent\nof initial population sizes")} + 
   {make_sim_plot(out_excl2b) }
+```
 
 
-(pp2 <- 
+### Assemble panels for Fig 1
+
+Next, we need to assemble the outer and middle panels into one figure to make the final version of Fig. 1.  
+*Click `code` on the right to see the code for assembling the panels together for Figure 1. The resulting plot is shown below:*
+
+
+```{r assemble-fig1, eval = T, cache = T, warning = F, message = F, fig.height = 4, fig.width = 8}
+fig1_middle <- 
   base_coex_plot + 
   labs(
     x = "<span style = 'font-size:10pt;color:grey25;'>
@@ -275,10 +279,6 @@ plot_traj4 <- {make_sim_plot(out_excl2)  +
            label = "Species\nexclusion", size = 5) +
   annotate("text", x = -0.9, y = 0.35, hjust = 0, 
            label = "Priority\neffects", size = 5) +
-    # geom_point(#"text", label = "outcome\n1", fontface = "italic", color = "midnightblue",
-    #          aes(x = metrics(params_excl2)["SD"], 
-    #              y = abs(metrics(params_excl2)["FD"])) + 
-    
   annotate("text", label = "outcome\n1", fontface = "italic", color = "midnightblue",
            x = metrics(params_excl2)["SD"], 
            y = abs(metrics(params_excl2)["FD"])) + 
@@ -306,7 +306,7 @@ plot_traj4 <- {make_sim_plot(out_excl2)  +
         axis.title.x = element_textbox_simple(
           width = NULL, halign = 0.5),
         axis.title.y = element_textbox_simple(
-          width = NULL, halign = 0.5, orientation = "left-rotated")))
+          width = NULL, halign = 0.5, orientation = "left-rotated"))
 
 
 
@@ -327,13 +327,13 @@ CCCCCCCAAAAAAAEEEEEEE
 "
 
 (full_plot <-
-    {pp2 } + 
+    {fig1_middle} + 
     {panelB} + 
     {panelC} + 
     {panelD} + 
     {panelE} + 
     plot_layout(design = layout) & 
-    theme(legend.position = "none", # plot.title.position = "plot",
+    theme(legend.position = "none", 
           plot.subtitle = element_text(face = "italic", color = "midnightblue", size = 9),
           plot.title = element_text(face = "italic", color = "midnightblue", size = 11),
           plot.tag = element_text(size = 12))
@@ -349,9 +349,12 @@ if(save_figures) {
 ```
 <br>
 
-### Figure S.1
+### Figure S.1: Coexistence outcomes with positive microbial effects
 
-We make another conceptual figure, but this time, show all four outcomes using positive values of all $m$ terms. 
+Next we made another conceptual figure, but this time, show all four outcomes using positive values of all $m$ terms.  
+*Click `code` on the right to see the code for generating and assembling Figure S1.*
+
+
 ```{r conceptual-fig1-mutualisms, eval = T, cache = T, warning = F, message = F, fig.height = 4, fig.width = 8}
 # defining parameters (positive m terms) for different competitive outcomes
 params_coex = c(m1A = .2*2, m1B = 0.3*2, m2A = .4*2, m2B = .13*2, v = 1)
@@ -362,19 +365,21 @@ time <- seq(0, 30,.1)
 init = c(pA = 0.3, pAlpha = 0.3)
 
 # run the previously defined psf_model() function with deSolve::ode()
-out_coex <- data.frame(deSolve::ode(func = psf_model,
-                                    y = init, times = time, parms = params_coex)) 
-out_excl <- data.frame(deSolve::ode(func = psf_model,
-                                    y = init, times = time, parms = params_excl)) 
-out_priority <- data.frame(deSolve::ode(func = psf_model,
-                                        y = init, times = time, parms = params_priority)) 
+out_coex <- data.frame(ode(func = psf_model,
+                           y = init, times = time, parms = params_coex)) 
+out_excl <- data.frame(ode(func = psf_model,
+                           y = init, times = time, parms = params_excl)) 
+out_priority <- data.frame(ode(func = psf_model,
+                               y = init, times = time, parms = params_priority)) 
 
-out_priority2 <- data.frame(deSolve::ode(func = psf_model,
-                                         y = c(pA = 0.7, pAlpha = 0.7), times = time, parms = params_priority)) 
-out_excl2 <- data.frame(deSolve::ode(func = psf_model,
-                                     y = init, times = time, parms = params_excl2)) 
-out_excl2b <- data.frame(deSolve::ode(func = psf_model,
-                                      y = c(pA = 0.7, pAlpha = 0.7), times = time, parms = params_excl2)) 
+out_priority2 <- data.frame(ode(func = psf_model,
+                                y = c(pA = 0.7, pAlpha = 0.7), 
+                                times = time, parms = params_priority)) 
+out_excl2 <- data.frame(ode(func = psf_model,
+                            y = init, times = time, parms = params_excl2)) 
+out_excl2b <- data.frame(ode(func = psf_model,
+                             y = c(pA = 0.7, pAlpha = 0.7),
+                             times = time, parms = params_excl2)) 
 
 
 # Plotting --------
@@ -386,71 +391,17 @@ plot_traj3 <- {make_sim_plot(out_priority) } +
 plot_traj4 <- {make_sim_plot(out_excl2) } + 
   {make_sim_plot(out_excl2b)}
 
-
-pp2 <- 
-    base_coex_plot + 
-    labs(
-      x = "<span style = 'font-size:10pt;color:grey25;'>
-    *Do plants grow better (destabilizing) or worse (stabilizing)<br>
-    in soils conditioned by conspecifics vs. heterospecifics?*
-    </span>",
-      
-      y = "Fitness differences<br>
-    <span style = 'font-size:10pt;color:grey25;''>
-    *Do species differ in their average responses<br>
-    to conditioned vs. reference soil communities?*
-    </span>",
-      
-    ) +  
-    annotate("text", x = 0.9, y = 0.25, hjust = 0.95, 
-             label = "Coexistence", size = 5) +
-    annotate("text", x = 0.1, y = Inf, vjust = 2, hjust = 0, 
-             label = "Species\nexclusion", size = 5) +
-    annotate("text", x = -0.1, y = Inf, vjust = 2, hjust = 1, 
-             label = "Species\nexclusion", size = 5) +
-    annotate("text", x = -0.9, y = 0.35, hjust = 0, 
-             label = "Priority\neffects", size = 5) +
-
-    annotate("text", label = "outcome\n1", fontface = "italic", color = "midnightblue",
-             x = metrics(params_excl2)["SD"], 
-             y = abs(metrics(params_excl2)["FD"])) + 
-    annotate("text", label = "outcome\n2", fontface = "italic", color = "midnightblue",
-             x = metrics(params_priority)["SD"], 
-             y = abs(metrics(params_priority)["FD"])) + 
-    annotate("text", label = "outcome\n3", fontface = "italic", color = "midnightblue",
-             x = metrics(params_excl)["SD"], 
-             y = metrics(params_excl)["FD"]) + 
-    annotate("text", label = "outcome\n4", fontface = "italic", color = "midnightblue",
-             x = metrics(params_coex)["SD"], 
-             y = metrics(params_coex)["FD"]) + 
-    annotate("text", label = c("-1", "-0.5", "0.5", "1"), 
-             x = c(-0.95, -0.5, 0.5, 0.95), y = -.03, color = "grey25", size = 3) +
-    scale_x_continuous(limits = c(-1,1), expand = c(0,0)) + 
-    scale_y_continuous(limits = c(-0.15,1), expand = c(0,0)) + 
-    annotate("segment", x = 0.2, xend = 0.7, y = -.07, yend = -.07,
-             colour = "grey25", size = 0.5, arrow = arrow(length = unit(0.075, "inches"))) +
-    annotate("segment", x = -0.2, xend = -.7, y = -.07, yend = -.07,
-             colour = "grey25", size = 0.5, arrow = arrow(length = unit(0.075, "inches"))) +
-    
-    theme(axis.line = element_line(size = 0),
-          plot.margin = margin(r = 20, t = 0, b = 10, l = 20),
-          axis.text.x = element_blank(),
-          axis.title.x = element_textbox_simple(
-            width = NULL, halign = 0.5),
-          axis.title.y = element_textbox_simple(
-            width = NULL, halign = 0.5, orientation = "left-rotated"))
-
-
-
-panelB <- {make_params_plot(params_excl2)    +labs(title = "outcome 1 (Exclusion)")} + {plot_traj4} 
-panelC <- {make_params_plot(params_priority) +labs(title = "outcome 2 (Priority effects)")} + {plot_traj3} 
-panelD <- {make_params_plot(params_excl)     +labs(title = "outcome 3 (Exclusion)")} + {plot_traj2}  
-panelE <- {make_params_plot(params_coex)     +labs(title = "outcome 4 (Coexistence)")} + {plot_traj1}  
-
-
+panelB <- {make_params_plot(params_excl2) + labs(title = "outcome 1 (Exclusion)")} + 
+  {plot_traj4} 
+panelC <- {make_params_plot(params_priority) + labs(title = "outcome 2 (Priority effects)")} + 
+  {plot_traj3} 
+panelD <- {make_params_plot(params_excl) + labs(title = "outcome 3 (Exclusion)")} + 
+  {plot_traj2}  
+panelE <- {make_params_plot(params_coex) + labs(title = "outcome 4 (Coexistence)")} + 
+  {plot_traj1}
 
 (full_plot <-
-    {pp2} + 
+    {fig1_middle} + 
     {panelB} + 
     {panelC} + 
     {panelD} + 
@@ -470,10 +421,15 @@ if(save_figures) {
 ```
 
 
-## Define functions & prepare data
+----------------------
 
-### Define useful functions to run the analyses downstream.
-Please click on "code" to the right to see the functions we have written to help run the analyses. 
+## Begin data analysis
+
+### Define useful functions to run the analyses downstream {#functions}
+
+Before importing and analyzing data, we first define a few custom functions that help with analyses. The first function uses the underlying data (mean and SE biomass of plants different species-soil combinations to calculate the effect sizes (stabilization and fitness differences, and their variances)). These effect sizes are the basis for the multivariate mixed-effect meta-analyses in Q1 and Q2. The second function implements the simulation-based approach for quantifying pairwise coexistence outcomes for each species pair using the underlying biomass data. This approach is used for Q2 (Figure 4).   
+*Click `code` on the right to see these two functions.*
+
 ```{r define-functions, eval = T}
 # Define a new function that takes as its input the data file
 # and uses the columns `AinA mean`, `AinA se`, .... to calculate the 
@@ -614,7 +570,9 @@ simulation_ci <- function(data_with_SDFD) {
 ```
 
 ### Read in datasets
-For this analysis, we are working with two complementary datasets. The first is the dataset of SD/FD effect sizes with field live soil as the reference; the second set of effect sizes are from studies with sterile soils as reference inoculua. 
+
+For this analysis, we are working with two complementary datasets. The first is the dataset of SD/FD effect sizes with field live soil as the reference; the second set of effect sizes are from studies with sterile soils as reference inoculua.  The number of rows in each of these datasets is shown below.  
+
 
 ```{r import-data, eval = T, include = F}
 # Start with the field live ref
@@ -642,7 +600,7 @@ if(save_figures) {
   }
 
 # Check how many pairs (over both datasets) have low vs. high
-# Fraction of inoculim (defining the cutoff as 25%)
+# Fraction of inoculum (defining the cutoff as 25%)
 bind_rows(sterile_ref, live_ref) %>%
   filter(`Fraction inoculum` < 0.251) %>% nrow 
 
@@ -666,12 +624,15 @@ Note that there are 449 comparisons in the sterile soil dataset right now, but t
 
 ### Explore data availability and patterns 
 
-We can first get a lay of the land on this dataset by checking how many species there are, from how many experiments, and from how many studies:
+We can first get a lay of the land on this dataset by checking how many species there are, from how many experiments, and from how many studies. We used these numbers to make the tables in Figure 2.  
+*Click `code` on the right to see how these numbers are generated.*
   
 ```{r explore-data-structure, eval = T, results = 'asis'}
 # Total number of effect sizes:
 # FIElD LIVE REFERENCE
 # first, across the whole dataset
+cat("**Live soil reference**")  
+
 cat(paste0("&emsp; Number of unique comparisons in Live ref dataset: ", 
            nrow(live_ref)))
 # Number of unique species pairs
@@ -688,7 +649,7 @@ cat(paste0("&emsp; Number of unique experiments in Live ref dataset: ",
 cat("----------")
 # STERILE SOIL REFERENCE
 # first, across the whole dataset
-
+cat("**Sterile soil reference**")  
 cat(paste0("&emsp; Number of unique comparisons in Sterile ref dataset: ", 
            nrow(sterile_ref)))
 # Number of unique species pairs
@@ -701,6 +662,7 @@ cat(paste0("&emsp; Number of unique studies in Sterile ref dataset: ",
 cat(paste0("&emsp; Number of unique experiments in Sterile ref dataset: ",
            sterile_ref$Experiment %>% unique %>% length))
 ```
+
 
 We can also do some summaries of the 4-5 moderators we are going to use later on in the analysis. 
 
@@ -766,7 +728,7 @@ sterile_ref %>%
 
 ```
 
-Before starting on the meta-analysis models, we should do some more data exploration. First let us evaluate patterns of conspecific and heterospecific effects of soil microbes (boxplots of the conspecific effects of microbes ($m_{1A}$ and $m_{2B}$) vs heterospecific effects ($m_{1B}$ and $m_{2A}$)): 
+Before starting on the meta-analysis models, we conducted data exploration. First we evaluated patterns of conspecific and heterospecific effects of soil microbes (boxplots of the conspecific effects of microbes ($m_{1A}$ and $m_{2B}$) vs heterospecific effects ($m_{1B}$ and $m_{2A}$)). *Click `code` to the right to view how these plots were generated*.  
 
 ```{r consp-v-heterosp-effect, warning = F, eval = T}
 # magnitude of con- vs. hetero-specific effects in the live reference dataset
@@ -801,6 +763,7 @@ sterile_ref %>%
 ```
 
 There is one species pair with an extreme outlier in the heterospecific effects column. We need to look into what is happening here. This is the pair from McCarthy-Neumann and Kobe (2010)'s study, where the paper has no value for plant growth, which was interpreted as zero growth in Crawford et al's dataset. 
+
 ```{r arrange_sterile_m2As, eval = T}
 # order m2A values in the dataset, the outlier shows up on top
 sterile_ref %>%
@@ -811,12 +774,12 @@ sterile_ref %>%
    select(Study, author, year, species_pair, 
           `AinA mean`,`AinB mean`, `AinR mean`, `BinA mean`, `BinB mean`, `BinR mean`,
           m1A:m2B) %>%
-  arrange(m2A)  #%>% View
+  arrange(m2A)  
 ```
 
-That does appear to be the case, the pair with the really low value is `colubrina_spinosa_iriartea_deltoidea`, for which no data for one species as interpreted as 0 biomass. From personal conversations with the author of the original study, this was just "no data" likely because of bad seeds rather than microbial effects. 
+That does appear to be the case, the pair with the really low value is `colubrina_spinosa_iriartea_deltoidea`, for which no data for one species as interpreted as 0 biomass. From personal conversations with the author of the original study (GK meeting with McCarthy-Neumann at ESA 2019), this was just "no data" likely because of bad seeds rather than microbial effects. 
 
-There is also one species pair (`rumex_occidentalis_rumex_salicifolius`) for which there is always zero growth in reference soil, this is not usable because the value for SE is zero, making it impossible to use in the meta-analysis. We can remove those points here. 
+There is also one species pair (`rumex_occidentalis_rumex_salicifolius`) for which there is always zero growth in reference soil. This is not usable because the value for SE is zero, making it impossible to use in the meta-analysis. We can remove those points here. 
 
 ```{r filter-sterile-sppairs, eval = T}
 # manually removing the two identified outliers
@@ -829,9 +792,15 @@ sterile_ref <-
 
 Removing those unusable data points leaves us with **446** pairwise comparisons in the Sterile Ref dataset.
 
+-----------------------------------
+
 ## Question 1
 
-Now that the data look in good shape, we are ready to quantify the effect sizes (magnitude of (de)stabilization and fitness differences). To do so we use functions defined in the earlier section "Define functions & prepare data". 
+Now that the data look in good shape, we are ready to quantify the effect sizes (magnitude of (de)stabilization and fitness differences). 
+
+### Calculate effect sizes (SD/FD) from biomass
+
+To calculate effect sizes, we use a function defined in the earlier section for [function definitions](#functions). *Click on `code` to the right to see how the function `calculate_effect_sizes()` is used to calculate effect sizes from biomass values.*
 
 ```{r calculate-effectsizes, eval = T, class.source = 'fold-show'}
 # Use the above-deined functions to calculate niche and fitness difference
@@ -848,7 +817,7 @@ sterile_ref <- calculate_effect_sizes(sterile_ref)
 
 ### Prepare the datasets for meta-analysis
 
-Right now the datasets are in "wide" format, with each row containing a species pair with it's stabilization and fitness difference measures, and we need to make this into a long format dataframe with each species pair having two rows (one for stabilization, one for fitness differences).
+Right now the datasets are in "wide" format, with each row containing a species pair with it's stabilization and fitness difference measures in separate columns. We need to make this into a long format dataframe with each species pair having two rows (one for stabilization, one for fitness differences). *Click `code` to the right to see how data are reshaped into long format*. 
 
 ```{r make-long-dfs, eval = T}
 # Make a dataset in 'long' format with all effect sizes
@@ -876,8 +845,7 @@ live_ref_long <-
 
 
 
-# Do the same process for the sterile reference dataset
-
+# Do the same process for the sterile reference dataset:
 
 # Make a dataset in 'long' format with all effect sizes
 # in one column, a moderator column that specifies whether it is FD/SD, 
@@ -905,11 +873,18 @@ sterile_ref_long <-
 
 ```
 
-### Run core models
+The long format dataset has the following structure:
 
-For the first question, we need to run a multi-variate meta-analysis model. To do this we first need to define a new function, because otherwise we would have to keep repeating a bunch of code. 
+```{r, eval = T}
+head(live_ref_long, 5)
+```
 
-#### Define a function to run the meta-model
+### Run meta-analysis models
+
+For the first question, we need to run a multi-variate meta-analysis model. To do this we first define a new function, because otherwise we would have to keep repeating a bunch of code. 
+
+**Define a function to run the meta-model** 
+
 
 ```{r define-run-metamod, eval = T, class.source = 'fold-show'}
 # function that automatically impute a variance-covariance matrix, and 
@@ -978,17 +953,17 @@ q1.lr.wald <- Wald_test(q1.lr.0.5, constraints = constrain_equal(1:2), vcov = "C
 # Check the estimated correlation: 
 # cov2cor(q1.lr.0.5$vb)
 
-# Uncomment the following lines to re-run the profile plots -- commenting
-# now because it's quite a slow step. 
+# Uncomment the following lines to re-run the profile plots -- 
+# commenting now because it's quite a slow step. 
+# This becomes Fig. S2A of the manuscript. 
 
 # pdf("figures/q1-lr-profile.pdf", height = 8, width = 8)
 # par(mfrow = c(2,2))
 # profile(q1.lr.0.5)
 # dev.off()
 ```
-Figure. S.2 (A)
 
-Now we can quantify the heterogeneity of the effect sizes. 
+Now we can quantify the heterogeneity of the effect sizes. To do so we follow the methods from Jackson et al. 2010, see also http://www.metafor-project.org/doku.php/tips:i2_multilevel_multivariate. 
 
 ```{r quantify-LR-heterogeneity, eval = T, class.source = 'fold-show'}
 # To quantify heterogeneity
@@ -1016,6 +991,7 @@ I2R_LiveRef # First for FD, then stabilization
 
 
 ### Run meta-analysis for the Sterile Reference dataset
+
 Now we repeat for the sterile reference dataset. Again, note that the response variables are the *absolute* values of stabilization and fitness difference.
 ```{r run-XS-metamodel, cache = T, eval = T, class.source = 'fold-show'}
 # Run the meta-analysis model on the full sterile reference dataset ----
@@ -1033,13 +1009,13 @@ q1.xs.wald <- Wald_test(q1.xs.0.5, constraints = constrain_equal(1:2), vcov = "C
 cov2cor(q1.xs.0.5$vb)
 
 # uncomment to run the code; slow to run:
+# This becomes Fig. S2B of the manuscript. 
 # pdf("figures/q1-xs-profile.pdf", height = 8, width = 8)
 # par(mfrow = c(2,2))
 # profile(q1.xs.0.5)
 # dev.off()
 
 ```
-Figure. S.2 (B)
 
 Now, quantify heterogeneity of the effect sizes
 ```{r quantify-XS-heterogeneity, eval = T, class.source = 'fold-show'}
@@ -1061,9 +1037,12 @@ I2R_SterileRef <-
 I2R_SterileRef
 ```
 
+------------------
 
-### Fig.3: plot of the effect sizes
-Now, we make a figure that visualize the effect sizes (magnitude of SD, FD), their CIs, and their heterogeneities for both datasets.
+### Fig. 3: plot of the effect sizes
+
+Having run the meta-analysis models and associated functions, we are ready to make a figure that visualize the effect sizes (magnitude of SD, FD), their CIs, and their heterogeneities for both datasets. This is Figure 3 of the manuscript.   
+*Click on `code` to the right to see how the following plot gets generated*. 
 
 ```{r make-figure-3, eval = T}
 # combine coefficients for models built with live and sterile reference datasets
@@ -1166,17 +1145,21 @@ if(save_figures) {
   ggsave("figures/q1_figure.eps",q1_plot, bg = "white", width = 6.5, height = 4.5)
 }
 ```
-Figure 3
 
 
-### Figure S.3: Moderator analyses
+### Evaluate robustness of results
 
-Now, explore how experimental moderators affect the outcomes using mixed effect models.
+Next we conducted a series of analyses to evaluate the robustness of the results in Figure 3. Specifically, we conducted moderator analyses to evaluate how experimental methodology affects outcomes, compared the results from our multi-variate analyses to univariate analyses of stabilization/fitness differences, evaluated how results were determined by our assumed value of within-study correlation of stabilzation/fitness differences, and evaluated whether results were especially influenced by particular studies.
 
+#### Moderator analyses (Figure S3)
+
+Next, we explored how experimental moderators affect the outcomes using mixed effect models. To do this we went through our 4/5 moderator variables (for live/sterile references, respectively) and conducted separate meta-analyses for each moderator variable.
 
 #### Live ref soils Moderator analysis 
 
 **Inoculation fraction: High/Low**
+
+For our first moderator analysis we can quantify effect sizes for studies that used high vs. low (<=25% inoculation). 
 
 ```{r Q1-moderators-live-inoc, eval = T, cache = T}
 # Make columns to help conduct the analyses
@@ -1216,12 +1199,17 @@ conf_int(q1.lr.inocFrac, vcov = "CR2") %>% # take look at the confidence interva
   kable_styling(full_width = F)
 ```
 
+
+Then we can use `wald_test` to evaluate whether the strength of stabilization and fitness differences are significantly different from one another in the two categories.  
+
 ```{r wald-tests-live-inoc, eval = T, class.source = 'fold-show'}
 Wald_test(q1.lr.inocFrac, constraints = constrain_equal(c(1,3)), vcov = "CR2") # Check if FD diff from SD in High inoc
 Wald_test(q1.lr.inocFrac, constraints = constrain_equal(c(2,4)), vcov = "CR2") # Check if FD diff from SD in low inoc
 ```
 
 ---
+
+Over the next few lines we repeat this type of analysis for different moderator variables.
 
 **Conditioning phase environment: Greenhouse/Field**
 
@@ -1269,7 +1257,10 @@ Wald_test(q1.lr.testComm, constraints = constrain_equal(c(3,6)), vcov = "CR2") #
 
 ```
 
-***Now, put it all together to make the plot. ***
+------
+
+
+Next, we put all this information together to make a plot of stabilization/fitness differences across different moderator variables for pairs with live soil reference.
 
 ```{r make-Q1-moderators-live-plot, eval = T, fig.height = 8, fig.width = 6}
 # combine coefficients from models built with the above moderators respectively
@@ -1338,7 +1329,10 @@ q1.mods.lr.plot <-
 q1.mods.lr.plot
 ```
 
+
 #### Sterile soil moderator analysis
+
+We now repeat the code above, but for pairs with sterile soils as reference. These analyses often take a long time, so we have saved the output from the code below in `code/saved_results` and import those files into the analysis.
 
 ```{r Q1-moderators-sterile-df, eval = T, cache = T}
 # first cleanup data by binning data for frac_inoc categories (low:<=0.25)
@@ -1380,7 +1374,7 @@ conf_int(q1.xs.inocFrac, vcov = "CR2") %>% # take look at the confidence interva
 
 
 ```{r wald-tests-sterile-inoc, eval = T, class.source = 'fold-show'}
-Wald_test(q1.xs.inocFrac, constraints = constrain_equal(c(1,3)), vcov = "CR2") #high: FD vs SD
+Wald_test(q1.xs.inocFrac, constraints = constrain_equal(c(1,3)), vcov = "CR2") # high: FD vs SD
 Wald_test(q1.xs.inocFrac, constraints = constrain_equal(c(2,4)), vcov = "CR2") # Low: FD vs SD
 ```
 
@@ -1636,8 +1630,10 @@ if(save_figures) {
 }
 ```
 
-### Fig. S.4: Univariate version of the Q1 models
-To test robustness of our results, we alternatively run univariate models of just SD or FD, and compare their magnitudes.
+#### Fig. S.4: Univariate version of the Q1 models
+
+To test robustness of our results, we ran univariate models of just SD or FD, and compared their magnitudes to the results of the multivariate analyses reported in Fig. 3.  
+*Click on `code` to see code for univariate analyses*.
 
 ```{r supp-q1-univariate, eval = T}
 # live reference dataset
@@ -1683,7 +1679,7 @@ q1_multi_v_uni %>%
 
 ```
 
-Now, we can make a plot:
+We can visualize these results in a figure: 
 
 ```{r supp-q1-univariate-multivarite-plot, eval = T}
 q1_multi_v_uni_plot <-
@@ -1712,12 +1708,12 @@ if(save_figures) {
 }
 
 ```
-Figure S.4
 
 
-### Fig. S.5: Evaluate sensitivity of Q1 multivariate models to the imputed value of within-experient correlation
+#### Fig. S.5: Evaluate sensitivity of Q1 multivariate models to the imputed value of within-experient correlation
 
-Here we run models as in the main text, but we impute covariance matrices with assumed within-experiment (de)stabilization-fitness difference correlations of -0.5, 0.1, or 0.9. (The main text models are run with assumed correlations of 0.5.). Expand code below to see details. 
+Next we ran models as in the main text, but we impute covariance matrices with assumed within-experiment (de)stabilization-fitness difference correlations of -0.5, 0.1, or 0.9. (The main text models are run with assumed correlations of 0.5.). *Click on `code` for details*.
+
 
 ```{r supp-q1-varying-imputed-r, eval = T, cache = T}
 # the three models below uses var-covar matrix imputed with r = 0.1, 0.9, -0.5
@@ -1801,14 +1797,12 @@ if(save_figures){
          varying_imputed_r_plot, height = 4, width = 7)
 }
 ```
-Figure S.5
 
-
-### Fig. S.6: Influence analysis
+#### Fig. S.6: Influence analysis
 
 To check the sensitivity of the Q1 multivariate models to certain influential experiments or data points (species pairs), we conducted influence analysis for models based on live and sterile reference soil, respectively. 
 
-#### Influence test for model with live reference data
+***Live reference data*** 
 
 In the influence analysis for live soil references we found two studies that were influential; we replicated all analyses without these studies. Below shows the coefficients and CI of the updated model, expand code chunk for details.
 
@@ -1866,7 +1860,7 @@ cd.points.q1.lr.0.5 <- read.csv("code/saved_results/cd.points.q1.lr.0.5.csv", ro
 # which(cd.points.q1.lr.0.5 > 0.45) # no "influential points"
 ```
 
-#### Influence test for model with sterile reference data
+***Sterile reference data*** 
 
 In the influence analysis for sterile soil references we found one study that was influential; we replicated all analyses without that study. Below shows the coefficients and CI of the updated model, expand code chunk for details.
 
@@ -1916,7 +1910,10 @@ colnames(cd.points.q1.xs.0.5) <- c("expt", "cooks_dist")
 # cd.points.q1.xs.0.5[cd.points.q1.xs.0.5$cooks_dist>0.45, ] # no influential points
 ```
 
-#### Make plots with & without influential points/expts (Fig.S.6)
+***Make plots with & without influential points/expts*** 
+
+Click `code` on the right for details on how we assembled this information to make Fig. S6. 
+
 ```{r make-suppfig-influence, eval = T}
 # make dataframe to plot results after deletion
 # for live reference dataset
@@ -1981,19 +1978,26 @@ if(save_figures){
   ggsave("figures/q1_deletion_plot.png", q1_deletion_plot, bg = "transparent", height = 5, width = 8)
 }
 ```
-Figure. S.6
 
+-----------------------
+
+-----------------------
 
 
 ## Question 2
 
-Across species pairs, what is the net effect of microbes on competitive outcomes? In other words, how frequently does the balance of microbially-mediated stabilization (or destabilization) and fitness differences predict species coexistence, exclusion, or priority effects
+Question two asks, across species pairs, what is the net effect of microbes on competitive outcomes? In other words, how frequently does the balance of microbially mediated stabilization (or destabilization) and fitness differences predict species coexistence, exclusion, or priority effects.
 
-### Fig.S.7: Meta-analysis approach
+### Meta-analysis approach (Fig. S7)
 
-First, before looking into each individual species pairs, we start with a meta-analytical approach like Q1 to predict the overall competitive outcome given the *average* microbial effect. Here we do separate meta-analysis models for species pairs each each dataset with stabilizing or destabilizing effects of soil microbes
+First, before looking into each individual species pairs, we start with a meta-analytical approach like Q1 to predict the overall competitive outcome given the *average* microbial effect. Here we do separate meta-analysis models for species pairs each each dataset with stabilizing or destabilizing effects of soil microbes. These results form the basis of Fig. S7 in the paper. 
 
-#### Run meta-analysis for live ref soil
+***Live soil reference***  
+
+First we run separate meta-analyses for species pairs with live reference soils and with positive vs. negative values of the stabilization metric. First we analyse pairs with microbial stabilization, and then analyze pairs with microbially mediated destabilization.    
+
+*Click `code` on the right for details*. 
+
 ```{r Q2-meta-analysis-live-stab,  eval = T, cache = T}
 # we first examine species pairs where interactions are STABILIZED by microbes
 live_ref_long_q2 <- 
@@ -2026,8 +2030,10 @@ Wald_test(q2.lr.0.5, constraints = constrain_equal(1:2),  vcov = "CR2") %>%
   kable() %>%
   kable_styling(full_width = 0)
 ```
+
 For pairs where interactions are stabilized, their overall fitness difference exceeds the stabilizing effect.
 
+Next, we turn to pairs with destabilizing effects of soil microbes (negative values of stabilization metric).
 
 ```{r Q2-meta-analysis-live-destab, eval = T, cache = T}
 # next, we look at pairs where interactions are DESTABILIZED by microbes
@@ -2063,10 +2069,12 @@ Wald_test(q2.lr.0.5.destab, constraints = constrain_equal(1:2),  vcov = "CR2") %
   kable() %>%
   kable_styling(full_width = 0)
 ```
+
 For pairs where interactions are destabilized, their magnitude of destabilizing effect are not significantly different from FD.
 
 
-#### Run meta-analysis for sterile ref soil
+***Sterile soil reference***  
+
 ```{r Q2-meta-analysis-sterile-stab,  cache = T, eval = T}
 # start with stabilized pairs:
 sterile_ref_long_q2 <- 
@@ -2099,7 +2107,8 @@ Wald_test(q2.xs.0.5, constraints = constrain_equal(1:2),  vcov = "CR2") %>%
   kable() %>%
   kable_styling(full_width = F)
 ```
-for pairs where interactions are stabilized, their overall FD exceeds the magnitude of stabilizing effect
+
+For pairs where interactions are stabilized, their overall FD exceeds the magnitude of stabilizing effect
 
 
 ```{r Q2-meta-analysis-sterile-destab, eval = T, cache = T}
@@ -2135,13 +2144,11 @@ Wald_test(q2.xs.0.5.destab, constraints = constrain_equal(1:2),  vcov = "CR2") %
   kable() %>%
   kable_styling(full_width = F)
 ```
+
 For pairs where interactions are destabilized, their overall FD exceeds the magnitude of destabilizing effect.
 
-
-
-#### Make plots (Fig.S.7)
-
-**For pairs with stabilizing effects (both reference types)**
+***Visualize results for Fig. S7***  
+*Click on `code` to the right for details on our visualizations*.  
 
 ```{r make-Q2-meta-analysis-plots-stab, eval = T, cache = T}
 # combine results (estimates) from both reference datasets:
@@ -2299,12 +2306,11 @@ if(save_figures) {
   ggsave("figures/q2_meta-plot.png", width = 11, height = 5)
 }
 ```
-Figure S.7
 
 
-### Pairwise direct comparison (of ND and FD)
+### Pairwise direct comparison of stabilization and fitness differences
 
-To evaluate the pairwise competitive outcome, We first do so by directly comparing the mean niche and fitness differences within species pairs. Below shows the resulting percentage of species pairs in which soil microbes are predicted to drive coexistence, competitive exclusion, and priority effects.
+To evaluate the pairwise competitive outcome, we need to directly compare strength of stabilization and fitness differences between individual species pair. We first just compare the *mean* values of stabilization and fitness differences between species, and later we incorporate the uncertainty of these estimates into our analysis. 
 
 #### Live reference dataset
 ```{r pairwise-comparison-live, eval = T}
@@ -2337,11 +2343,15 @@ paste0("priority effects: ", percent(sum(sterile_ref$mean_SD<0 & abs(sterile_ref
 paste0("competitive exclusion: ", percent(sum(abs(sterile_ref$mean_SD)<sterile_ref$abs_FD)/nrow(sterile_ref)))
 ```
 
-### Fig.4: Pairwise sampling approach 
+### Incorporating the uncertainty into predictions of coexistence outcomes
 
-We further incorporate empirical uncertainties into the inference via a sampling approach. To do this sampling, we use the custom function `simulation_ci`, which we have defined in the earlier section "Define functions & prepare data". 
+We further incorporate empirical uncertainties into the inference via a sampling approach. To do this sampling, we use the custom function `simulation_ci`, which we  defined in an [earlier section](#functions).
+
 
 #### Live reference dataset
+We start with conducting the analysis on species pairs with growth in live soil providing the reference.  We then plot the outcomes as piecharts onto the base coexistence plot defined in the first section of this document.  
+*Click `code` to the right for details on how we use the new function `simulation_ci()` to conduct this analysis.* 
+
 ```{r simulation-livesoil, eval = T, cache = T, warning = FALSE}
 # simulate competitive outcomes based on distributions 
 # with the mean and sd of each pairwise comparisons
@@ -2415,6 +2425,9 @@ base_coex_plot1 <- base_coex_plot1 +
 
 #### Sterile reference dataset
 
+Repeat the procedure for species pairs with growth in sterile soil providing the reference. 
+
+
 ```{r simulation-sterilesoil, eval = T, cache = T, warning = FALSE}
 # simulate competitive outcomes based on distributions 
 # with the mean and sd of each pairwise comparisons
@@ -2483,7 +2496,8 @@ if(save_figures) {
 ```
 
 
-Now we can do a sort of "Moderator analysis" for this sampling approach. 
+***Now we can do a sort of "Moderator analysis" for this sampling approach.***.  
+This becomes Table S1-2 in the manuscript. 
 
 ```{r simulation-moderator-analysis, eval = T}
 ### "Moderator analysis"
@@ -2586,7 +2600,7 @@ XS_simulation_out_SterileSoilCmS <- simulation_ci(data_with_SDFD = sterile_ref %
 # percent_outcomes(XS_simulation_out_SterileSoilCmS$outcomes_by_run)
 ```
 
-#### **Table S.1: table of outcomes for live soil reference**
+**Table S.1: table of outcomes for live soil reference**
 
 ```{r make-simulation-table-live, eval = T, warning=FALSE}
 options(kableExtra.latex.load_packages = FALSE)
@@ -2653,9 +2667,8 @@ rbind(c("Overall",(t(unlist(percent_outcomes(live_ref_sims_by_run))))),
   kable(align = "llccc")
     
 ```
-Table S.1
 
-#### **Table S.2: table of outcomes for sterile soil reference**
+**Table S.2: table of outcomes for sterile soil reference**
 ```{r make-simulation-table-sterile, eval = T}
 # combining 'moderator analysis' results for the sampling of sterile reference data
 table_of_things_sterile <-
@@ -2745,12 +2758,18 @@ rbind(c("Overall",(t(unlist(percent_outcomes(sterile_ref_sims_by_run))))),
   select(category, Method, Coexistence, `Priority effects`, Exclusion) %>%
   kable(booktabs = T, align = "llccc")
 ```
-Table S.2
 
+
+---------------------------
 
 ## Additional supplemental analyses
-### Fig.S.8: analysis to justify Q2 pairwise approaches
-Looking at competitive outcomes at the species pair level can reveal patterns that may otherwise hidden using the meta-analytical approach. For example, even when microbes drive stronger fitness differences than stabilization on average, they can still favor coexistence for a substantial fraction of species pairs, especially if these effects are negatively correlated. Here we illustrate this scenario.  
+
+Finally, we conducted some supplemental analyses to support/justify our decisions above. 
+
+### Justification for Q2 pairwise approaches (Fig. S.8)
+
+Looking at competitive outcomes at the species pair level can reveal patterns that may otherwise hidden using the meta-analytical approach. For example, even when microbes drive stronger fitness differences than stabilization on average, they can still favor coexistence for a substantial fraction of species pairs, especially if these effects are negatively correlated. Here we illustrate this scenario (Fig S.8).  
+
 ```{r q2-reason, eval = TRUE, cache = T, warning=FALSE}
 # set seed for reproducibility 
 set.seed(680)
@@ -2836,7 +2855,7 @@ if(save_figures){
          q2_reason_plot, height = 6, width = 7)
 }
 ```
-Figure S.8.
+
 
 ### Fig.S.9: Univariate analysis of the strength of (de)stabilization
 
@@ -2896,11 +2915,59 @@ if(save_figures) {
          overall_stabilization_plot, width = 9, height = 2)
 }
 ```
-Figure. S.9
+
+### Comparing our data extractions to Crawford et al.'s
+
+Finally we want to verify that our data extraction protocol to get the estimates of plant growth in reference soils (using Web plot digitizer) gives the same results as Crawford et al's extractions. To do this we re-extracted the relevant biomass values for 100+ estimates and compared our extractions to those of Crawford et al.
+
+```{r compare-data-extractions, eval = T, message=FALSE, warning=FALSE}
+# load data where we re-extracted part of the datat from Crawford et al. 2019
+comparison_df <- read_csv("data/crawford-yan-extractions.csv")
+# filter out the data that we didn't reextract
+comparison_df_filt <- comparison_df %>%
+  filter(!is.na(AinA_mean_reestimate))
+
+# make dataframe to combine the original value and our re-extracted value
+df_to_plot <- data.frame(crawford_estimates = c(comparison_df_filt$`AinA mean`, 
+                                                comparison_df_filt$`AinB mean`, 
+                                                comparison_df_filt$`BinA mean`, 
+                                                comparison_df_filt$`BinB mean`),
+                         yan_reestimates = c(comparison_df_filt$AinA_mean_reestimate, 
+                                             comparison_df_filt$AinB_mean_reestimate, 
+                                             comparison_df_filt$BinA_mean_reestimate,
+                                             comparison_df_filt$BinB_mean_reestimate))
+
+# test the correlation of original vs. reextracted values
+cor.test(df_to_plot$crawford_estimates, df_to_plot$yan_reestimates)
+
+
+# visualize the comparison
+comparison_plot <- 
+  ggplot(df_to_plot, aes(x = crawford_estimates, y = yan_reestimates)) +
+  geom_point(size = 2, shape = 21, stroke = 1) + 
+  geom_smooth(method = "lm") + 
+  geom_abline() +
+  scale_x_log10() + scale_y_log10() +
+  xlab("Biomass estimate in Crawford et al. 2019") +
+  ylab("Biomass re-extracted by Yan et al.") + 
+  annotate('text', x = 0, y = Inf, hjust = 0,  vjust = 1.5, 
+           label = paste0("  n = ", nrow(df_to_plot), " biomass estimates\n  r = 0.999"),
+           size = 5) + 
+  theme_plots()
+
+comparison_plot
+```
+
+
+From both the correlation test and the visualization, our re-extracted values well correspond to the original values extracted by Crawford et al., indicating consistency in the data extraction by the two studies.
 
 
 ### Caterpillar-like plots
+
+Finally, we made these catterpillar plots but were not able to include them in the paper -- including here because they offer an alternative way  of visualizing the effect sizes we are evaluating in this paper. 
+
 #### live reference dataset
+
 ```{r catterpillar-plots, eval = T, message = F, fig.height = 8}
 # For Live soil reference --------- 
 live_ref_plot <- 
@@ -3027,51 +3094,11 @@ if(save_figures) {
 ```
 
 
-### Comparing our data extractions to Crawford et al.'s
-
-Finally we want to just double check that our data extraction protocol to get the estimates of plant growth in reference soils gives the same results as Crawford et al's extractions (when we apply our protocol to non-reference growth).
-
-```{r compare-data-extractions, eval = T, message=FALSE, warning=FALSE}
-# load data where we re-extracted part of the datat from Crawford et al. 2019
-comparison_df <- read_csv("data/crawford-yan-extractions.csv")
-# filter out the data that we didn't reextract
-comparison_df_filt <- comparison_df %>%
-  filter(!is.na(AinA_mean_reestimate))
-
-# make dataframe to combine the original value and our re-extracted value
-df_to_plot <- data.frame(crawford_estimates = c(comparison_df_filt$`AinA mean`, 
-                                                comparison_df_filt$`AinB mean`, 
-                                                comparison_df_filt$`BinA mean`, 
-                                                comparison_df_filt$`BinB mean`),
-                         yan_reestimates = c(comparison_df_filt$AinA_mean_reestimate, 
-                                             comparison_df_filt$AinB_mean_reestimate, 
-                                             comparison_df_filt$BinA_mean_reestimate,
-                                             comparison_df_filt$BinB_mean_reestimate))
-
-# test the correlation of original vs. reextracted values
-cor.test(df_to_plot$crawford_estimates, df_to_plot$yan_reestimates)
-
-
-# visualize the comparison
-comparison_plot <- 
-  ggplot(df_to_plot, aes(x = crawford_estimates, y = yan_reestimates)) +
-  geom_point(size = 2, shape = 21, stroke = 1) + 
-  geom_smooth(method = "lm") + 
-  geom_abline() +
-  scale_x_log10() + scale_y_log10() +
-  xlab("Biomass estimate in Crawford et al. 2019") +
-  ylab("Biomass re-extracted by Yan et al.") + 
-  annotate('text', x = 0, y = Inf, hjust = 0,  vjust = 1.5, 
-           label = paste0("  n = ", nrow(df_to_plot), " biomass estimates\n  r = 0.999"),
-           size = 5) + 
-  theme_plots()
-
-comparison_plot
-```
-From both the correlation test and the visualization, our re-extracted values well correspond to the original values extracted by Crawford et al., indicating consistency in the data extraction by the two studies.
 
 -------------
+
 ## Session info
-```{r session-info, eval=TRUE}
+
+```{r session-info, eval = TRUE, class.source = 'fold-show'}
 sessionInfo()
 ```
