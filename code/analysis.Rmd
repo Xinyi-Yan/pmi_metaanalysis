@@ -18,7 +18,7 @@ chunk_output_type: console
 
 This file contains code for reproducing results from Yan et al. 'A quantitative synthesis of soil microbial effects on plant species coexistence'.
 
-The html document mostly shows the output rather than the underlying code. **Click on the 'Code' button on the right to expand or hide the code.**
+The html document mostly shows the output rather than the underlying code. **Click on the 'Code' button on the right to expand or hide the code.** Alternatively, you can directly run the code in the Rmd file, but please be aware that some code chunks may take a while to run for the first time (it may take more than 30 min to knit the entire document).
 
 
 ```{r setup, include = FALSE}
@@ -727,6 +727,8 @@ sterile_ref %>%
   kable() %>% kable_styling(full_width = F)
 
 ```
+Note that in analyses below, "not specified", "pasteurization", "steam-pasteurization", and "steaming" will be grouped as "other".
+
 
 Before starting on the meta-analysis models, we conducted data exploration. First we evaluated patterns of conspecific and heterospecific effects of soil microbes (boxplots of the conspecific effects of microbes ($m_{1A}$ and $m_{2B}$) vs heterospecific effects ($m_{1B}$ and $m_{2A}$)). *Click `code` to the right to view how these plots were generated*.  
 
@@ -1333,6 +1335,9 @@ q1.mods.lr.plot
 #### Sterile soil moderator analysis
 
 We now repeat the code above, but for pairs with sterile soils as reference. These analyses often take a long time, so we have saved the output from the code below in `code/saved_results` and import those files into the analysis.
+
+
+We first cleanup data by binning data for frac_inoc categories (low:<=0.25) and binning minority sterilization methods into "other" category. 
 
 ```{r Q1-moderators-sterile-df, eval = T, cache = T}
 # first cleanup data by binning data for frac_inoc categories (low:<=0.25)
@@ -2310,7 +2315,7 @@ if(save_figures) {
 
 ### Pairwise direct comparison of stabilization and fitness differences
 
-To evaluate the pairwise competitive outcome, we need to directly compare strength of stabilization and fitness differences between individual species pair. We first just compare the *mean* values of stabilization and fitness differences between species, and later we incorporate the uncertainty of these estimates into our analysis. 
+To evaluate the pairwise competitive outcome, we need to directly compare strength of stabilization or destabilization and fitness differences between individual species pair. We first just compare the *mean* values of the stabilization and fitness differences (note that here stabilization is the signed metric, no longer the absolute value as in Q1) between species, and later we incorporate the uncertainty of these estimates into our analysis. 
 
 #### Live reference dataset
 ```{r pairwise-comparison-live, eval = T}
@@ -2768,7 +2773,7 @@ Finally, we conducted some supplemental analyses to support/justify our decision
 
 ### Justification for Q2 pairwise approaches (Fig. S.8)
 
-Looking at competitive outcomes at the species pair level can reveal patterns that may otherwise hidden using the meta-analytical approach. For example, even when microbes drive stronger fitness differences than stabilization on average, they can still favor coexistence for a substantial fraction of species pairs, especially if these effects are negatively correlated. Here we illustrate this scenario (Fig S.8).  
+Looking at competitive outcomes at the species pair level can reveal patterns that may otherwise hidden using the meta-analytical approach. For example, even when microbes drive stronger fitness differences than stabilization on average (see non-overlapping CIs in panel A below), they can still favor coexistence for a substantial fraction (e.g. 46% in panel B) of species pairs, especially if these effects are negatively correlated. Here we illustrate this scenario (Fig S.8).  
 
 ```{r q2-reason, eval = TRUE, cache = T, warning=FALSE}
 # set seed for reproducibility 
