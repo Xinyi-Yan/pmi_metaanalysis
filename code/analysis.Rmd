@@ -1126,10 +1126,10 @@ live_ref_long <-
                         size = 3.5, vjust = -0.25, label.color = NA) +
   guides(fill = "none", color = "none", text = "none") + 
   
-  ggpubr::geom_bracket(xmin = 0.77, xmax = 1.23, y = 5.14, 
-                       label = "p<0.001", tip.length = c(0.01, 0.01)) +
-  ggpubr::geom_bracket(xmin = 1.77, xmax = 2.23, y = 2.3, 
-                       label = "p=0.0016", tip.length = c(0.01, 0.01)) +
+  ggpubr::geom_bracket(xmin = 0.8, xmax = 1.21, y = 5.15, 
+                       label = "P < 0.001  \n ", tip.length = c(0.01, 0.01)) +
+  ggpubr::geom_bracket(xmin = 1.8, xmax = 2.21, y = 2.3, 
+                       label = "P = 0.0016\n ", tip.length = c(0.01, 0.01)) +
   
   theme(axis.text.y = element_text(color = "black", size = 13),
         axis.text.x = element_text(size = 12),
